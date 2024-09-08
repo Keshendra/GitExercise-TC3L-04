@@ -12,7 +12,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("MYSTIC QUEST")
 
 # Load and scale background images
-BG_MENU = pygame.transform.scale(pygame.image.load("Vill.jpg"), (WIDTH, HEIGHT))
+BG_MENU = pygame.transform.scale(pygame.image.load("m.jpg"), (WIDTH, HEIGHT))
 backgrounds = [
     pygame.transform.scale(pygame.image.load('farm.jpg'), (WIDTH, HEIGHT)),    # Background for page 1
     pygame.transform.scale(pygame.image.load('treasure.png'), (WIDTH, HEIGHT)),  # Background for page 2
@@ -21,19 +21,12 @@ backgrounds = [
 ]
 
 # Load button images
-start_img = pygame.image.load("start_button.png").convert_alpha()
-exit_img = pygame.image.load("exit.button.png").convert_alpha()
+start_img = pygame.image.load("button.start.png").convert_alpha()
 next_img = pygame.image.load("forward_button.png").convert_alpha()
 back_img = pygame.image.load("backward_button.png").convert_alpha()
 
-# Center calculation helper function
-def center_position(image, screen_width, screen_height, offset_x=0, offset_y=0):
-    x = (screen_width - image.get_width()) // 2 + offset_x
-    y = (screen_height - image.get_height()) // 2 + offset_y
-    return x, y
-
 # Button class
-class Button:
+class Button():
     def __init__(self, x, y, image, scale=1):
         width = image.get_width()
         height = image.get_height()
@@ -54,7 +47,6 @@ class Button:
                 self.clicked = True
                 action = True
 
-        # Reset clicked state when mouse button is released
         if pygame.mouse.get_pressed()[0] == 0:
             self.clicked = False
 
@@ -63,19 +55,13 @@ class Button:
 
         return action 
 
-# Create button instances with centered positions
-button_x_start, button_y_start = center_position(start_img, WIDTH, HEIGHT, offset_y=-50)
-start_button = Button(button_x_start, button_y_start, start_img)
-
-button_x_exit, button_y_exit = center_position(exit_img, WIDTH, HEIGHT, offset_y=150)
-exit_button = Button(button_x_exit, button_y_exit, exit_img)
+# Create button instances
+button_x = (WIDTH - start_img.get_width()) // 2
+button_y = (HEIGHT - start_img.get_height()) // 2 + 100
+start_button = Button(button_x, button_y, start_img)
 
 forward_button = Button(900, 480, next_img, 1)  # Positioned the button for better visibility
 backward_button = Button(100, 480, back_img, 1)  # Positioned the button for better visibility
-
-# Create "Back to Menu" button for instructions page
-button_x_back_to_menu, button_y_back_to_menu = center_position(back_img, WIDTH, HEIGHT, offset_y=150)
-back_to_menu_button = Button(button_x_back_to_menu, button_y_back_to_menu, back_img)
 
 # Set up the font
 font = pygame.font.SysFont('Arial Black', 30)
@@ -84,62 +70,32 @@ text_color = (255, 255, 255)  # White color
 # Pages content
 pages = [
     ["There is a village named Songkaran Village,", "there was a farmer and while he was working he saw ", "an ancient treasure hidden", "deep within the paddy field."],
-    ["The farmer went and took it from", "dark forests and across", "and touched it and got thrown far away, and he fainted", "once he woke up he was surrounded by village People."],
-    ["Few months later he found out he has super power", "There were Elemental Guardians that escaped from the cave of GOD", "Village People were attacked by The Elemental Guardians such as", "FIRE, WATER, WIND, EARTH", "Then Hero showed up and fought against THEM."],
+    ["the farmer went and took it from", "dark forests and across", "and touch and he got thrown far away, and he fainted", "once he awake he was surronded by village People."],
+    ["Few months later he found out he has super power", "The was Elemental Guardians that escaped from cave of GOD", "Village People was attacked by The Elemental Guardians such as", "FIRE,WATER,WIND,EARTH", "Then Hero showed up and fight against THEM."],
     ["DUN DUN DUN ", "TO BE CONTINUED,"]
-]
-
-# Instructions content
-instructions = [
-    "Welcome to the instructions page!",
-    "This game is all about exploring and adventuring.",
-    "Use the arrow keys to navigate.",
-    "Press the spacebar to interact with objects.",
-    "Enjoy your journey and good luck!"
 ]
 
 # Game States
 MENU = 'menu'
 STORY = 'story'
-INSTRUCTIONS = 'instructions'
 state = MENU
 
 # Current Page
 current_page = 0
 
-# Function to display the text with a border
-def draw_text(screen, text, font, color, border_color=(0, 0, 0)):
+# Function to display the story text
+def draw_text(screen, text, font, color):
     y_position = 150
-    border_offset = 2  # Offset for the border thickness
-    
     for line in text:
-        # Render the text multiple times around the original position to create a border
-        for dx, dy in [(-border_offset, 0), (border_offset, 0), (0, -border_offset), (0, border_offset),
-                       (-border_offset, -border_offset), (-border_offset, border_offset),
-                       (border_offset, -border_offset), (border_offset, border_offset)]:
-            border_surface = font.render(line, True, border_color)
-            border_rect = border_surface.get_rect(center=(WIDTH // 2 + dx, y_position + dy))
-            screen.blit(border_surface, border_rect)
-
-        # Render the original text in the center
         line_surface = font.render(line, True, color)
         line_rect = line_surface.get_rect(center=(WIDTH // 2, y_position))
         screen.blit(line_surface, line_rect)
-
         y_position += 40
 
 def draw_main_menu():
     screen.blit(BG_MENU, (0, 0))
-    
-    # Draw the start button and check if it's clicked
     if start_button.draw(screen):
-        return INSTRUCTIONS  # Changed to go to instructions instead of story
-    
-    # Draw the exit button and check if it's clicked
-    if exit_button.draw(screen):
-        pygame.quit()
-        sys.exit()
-
+        return STORY
     pygame.display.flip()
     return MENU
 
@@ -161,20 +117,6 @@ def draw_story_page():
 
     pygame.display.flip()
 
-def draw_instructions_page():
-    screen.fill((0, 0, 0))  # Fill the screen with black
-    draw_text(screen, instructions, font, text_color)
-    
-    # Draw the forward and backward buttons and check if they're clicked
-    if forward_button.draw(screen):
-        return STORY  # Go to the story page
-    
-    if backward_button.draw(screen):
-        return MENU  # Go back to the main menu
-
-    pygame.display.flip()
-    return INSTRUCTIONS
-
 def main():
     global state
     run = True
@@ -189,8 +131,6 @@ def main():
             state = draw_main_menu()
         elif state == STORY:
             draw_story_page()
-        elif state == INSTRUCTIONS:
-            state = draw_instructions_page()
 
     pygame.quit()
 
