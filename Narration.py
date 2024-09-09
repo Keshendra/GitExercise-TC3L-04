@@ -22,7 +22,6 @@ backgrounds = [
 
 # Load button images
 start_img = pygame.image.load("play_button.png").convert_alpha()
-instruction_img = pygame.image.load("instruction.button.png").convert_alpha()
 next_img = pygame.image.load("forward_button.png").convert_alpha()
 back_img = pygame.image.load("backward_button.png").convert_alpha()
 

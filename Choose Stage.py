@@ -29,7 +29,7 @@ stage_images = [
 
 # Load and scale the padlock image for locked stages
 padlock_image = pygame.image.load('padlock.png')  # Load the padlock image
-padlock_image = pygame.transform.scale(padlock_image, (50, 50))  # Scale the padlock image
+padlock_image = pygame.transform.scale(padlock_image, (50, 50))  # Scale the puttu image
 
 # Scale stage images appropriately
 stage_images = [pygame.transform.scale(img, (200, 200)) for img in stage_images]
