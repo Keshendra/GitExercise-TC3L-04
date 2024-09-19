@@ -75,7 +75,7 @@ enemies = [
     {'pos': [12 * tile_size, 10 * tile_size], 'size': 50, 'dir': random.choice([-1, 1])}
 ]
 
-enemy_speed = 10  # Speed of enemy movement
+enemy_speed = 2  # Speed of enemy movement
 
 # Attack settings
 attack_range = 60  # The range within which the attack is effective
@@ -83,7 +83,7 @@ attack_range = 60  # The range within which the attack is effective
 # Player lives settings
 lives = 3  # Set to 3 hearts
 score = 0  # Initialize score
-required_flames = 30  # Number of flames required to exit the game
+required_flames = 5  # Number of flames required to exit the game
 enemy_hits = 0  # Track number of hits by enemies
 
 # Keep track of collected fire flames
@@ -271,6 +271,7 @@ def main():
         # Draw everything
         draw_map()
         draw_enemies()
+        
         draw_hearts()
         draw_score()
         screen.blit(player_image, (player_pos[0], player_pos[1]))  # Draw player

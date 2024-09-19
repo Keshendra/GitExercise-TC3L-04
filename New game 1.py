@@ -13,7 +13,7 @@ WHITE = (255, 255, 255)
 
 # Screen setup
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Fire")
+pygame.display.set_caption("fire")
 
 # Clock for controlling the frame rate
 clock = pygame.time.Clock()
@@ -89,7 +89,7 @@ while running:
     if player_jump:
         player_y -= jump_velocity
         jump_velocity -= gravity
-        if jump_velocity <= 0:
+        if jump_velocity < -jump_height:
             player_jump = False
             falling = True
 
@@ -109,11 +109,6 @@ while running:
             jump_velocity = 0  # Reset jump velocity when standing on a platform
             break
 
-    # Ensure the player does not fall through the bottom of the screen
-    if player_y > SCREEN_HEIGHT - player_height:
-        player_y = SCREEN_HEIGHT - player_height
-        falling = False
-
     if not on_platform and not player_jump:
         falling = True
 
@@ -122,6 +117,9 @@ while running:
         player_x = 0
     elif player_x > SCREEN_WIDTH - player_width:
         player_x = SCREEN_WIDTH - player_width
+    if player_y > SCREEN_HEIGHT - player_height:
+        player_y = SCREEN_HEIGHT - player_height
+        falling = False  # Stop falling when hitting the bottom of the screen
 
     # Move platforms and coins together to the left and reset when they go off screen
     for platform in platforms:
