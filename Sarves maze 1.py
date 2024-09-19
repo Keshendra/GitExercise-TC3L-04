@@ -13,7 +13,7 @@ WHITE = (255, 255, 255)
 
 # Screen setup
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Fire")
+pygame.display.set_caption("fire")
 
 # Clock for controlling the frame rate
 clock = pygame.time.Clock()
@@ -35,6 +35,16 @@ platform_image = pygame.transform.scale(platform_image, (200, 80))
 coin_image = pygame.transform.scale(coin_image, (60, 60))
 background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
+# Load sound with error handling
+try:
+    collect_sound = pygame.mixer.Sound('coin collect.mp3')
+    pygame.mixer.music.load('fire music.mp3')  # Load background music
+    pygame.mixer.music.set_volume(0.5)  # Set volume level (0.0 to 1.0)
+    pygame.mixer.music.play(-1)  # Play music indefinitely
+except pygame.error as e:
+    print(f"Unable to load sound or music: {e}")
+    sys.exit()
+
 # Player settings
 player_x = SCREEN_WIDTH // 2
 player_y = SCREEN_HEIGHT - 150  # Start higher above the bottom to ensure player visibility
@@ -49,7 +59,7 @@ falling = True  # Start as falling until on a platform or ground
 background_x = 0
 background_y = 0
 
-# Platform settings with a more interesting arrangement (from second code)
+# Platform settings with a more interesting arrangement
 platforms = [
     pygame.Rect(100, 600, 200, 20),  # Platform 1
     pygame.Rect(400, 450, 200, 20),  # Platform 2
@@ -89,7 +99,7 @@ while running:
     if player_jump:
         player_y -= jump_velocity
         jump_velocity -= gravity
-        if jump_velocity <= 0:
+        if jump_velocity < -jump_height:
             player_jump = False
             falling = True
 
@@ -109,11 +119,6 @@ while running:
             jump_velocity = 0  # Reset jump velocity when standing on a platform
             break
 
-    # Ensure the player does not fall through the bottom of the screen
-    if player_y > SCREEN_HEIGHT - player_height:
-        player_y = SCREEN_HEIGHT - player_height
-        falling = False
-
     if not on_platform and not player_jump:
         falling = True
 
@@ -122,6 +127,9 @@ while running:
         player_x = 0
     elif player_x > SCREEN_WIDTH - player_width:
         player_x = SCREEN_WIDTH - player_width
+    if player_y > SCREEN_HEIGHT - player_height:
+        player_y = SCREEN_HEIGHT - player_height
+        falling = False  # Stop falling when hitting the bottom of the screen
 
     # Move platforms and coins together to the left and reset when they go off screen
     for platform in platforms:
@@ -137,6 +145,7 @@ while running:
     # Collision detection with coins
     for coin in coins[:]:
         if player_rect.colliderect(coin['rect']):
+            collect_sound.play()  # Play the sound effect
             coins.remove(coin)
 
     # Drawing

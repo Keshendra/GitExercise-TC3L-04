@@ -35,6 +35,16 @@ platform_image = pygame.transform.scale(platform_image, (200, 80))
 coin_image = pygame.transform.scale(coin_image, (60, 60))
 background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
+# Load sound with error handling
+try:
+    collect_sound = pygame.mixer.Sound('coin collect.mp3')
+    pygame.mixer.music.load('fire music.mp3')  # Load background music
+    pygame.mixer.music.set_volume(0.5)  # Set volume level (0.0 to 1.0)
+    pygame.mixer.music.play(-1)  # Play music indefinitely
+except pygame.error as e:
+    print(f"Unable to load sound or music: {e}")
+    sys.exit()
+
 # Player settings
 player_x = SCREEN_WIDTH // 2
 player_y = SCREEN_HEIGHT - 150  # Start higher above the bottom to ensure player visibility
@@ -49,7 +59,7 @@ falling = True  # Start as falling until on a platform or ground
 background_x = 0
 background_y = 0
 
-# Platform settings with a more interesting arrangement (from second code)
+# Platform settings with a more interesting arrangement
 platforms = [
     pygame.Rect(100, 600, 200, 20),  # Platform 1
     pygame.Rect(400, 450, 200, 20),  # Platform 2
@@ -135,6 +145,7 @@ while running:
     # Collision detection with coins
     for coin in coins[:]:
         if player_rect.colliderect(coin['rect']):
+            collect_sound.play()  # Play the sound effect
             coins.remove(coin)
 
     # Drawing
