@@ -30,10 +30,20 @@ black_tortoise = pygame.image.load("black_tortoise.png").convert_alpha()
 black_tortoise_img = pygame.transform.scale(black_tortoise, (PLAYER_WIDTH, PLAYER_HEIGHT))
 
 earth_img = pygame.image.load("earth_atk.png").convert_alpha()
-earth_spell = pygame.transform.scale(earth_img, (100, 100))
+earth_spell = pygame.transform.scale(earth_img, (200, 200))
 
-lightning_img = pygame.image.load("lightning_atk.png").convert_alpha()
-lightning_spell = pygame.transform.scale(lightning_img, (100, 100))
+sun_black_spell_img = pygame.image.load("sun_black_spell.png").convert_alpha()
+sun_black_spell = pygame.transform.scale(sun_black_spell_img, (200, 200))
+
+#fire_spell_frame = [pygame.image.load(f"fire_spell_frame_{i}.png").convert_alpha() for i in range(1, 9)]
+#current_fire_frame = 0
+#frame_delay = 1
+#frame_count = 0
+
+earth_explosive_frames = [pygame.image.load(f"earth_explosive_frame_{i}.png").convert_alpha() for i in range(1, 21)]
+earth_earth_explosive_active = False
+earth_explosive_pos = None
+earth_explosive_frame = 0
 
 def draw_IMG():
     
@@ -41,19 +51,31 @@ def draw_IMG():
     WINDOW.blit(BL_img, (400, 0))
 
 def draw(sun, black_tortoise, sun_health_rect, black_tortoise_health_rect, spells):
+    global current_fire_frame, frame_count, earth_explosive_active, earth_explosive_frame
+
     WINDOW.blit(sun_img, (sun.x, sun.y))
     WINDOW.blit(black_tortoise_img, (black_tortoise.x, black_tortoise.y))
 
     for spell in spells:
-        if spell["type"] == "lightning":
-            WINDOW.blit(lightning_spell, (spell["rect"].x, spell["rect"].y))
+        if spell["type"] == "sun_black_spell":
+            WINDOW.blit(sun_black_spell, (spell["rect"].x, spell["rect"].y))
         if spell["type"] == "earth":
             WINDOW.blit(earth_spell, (spell["rect"].x, spell["rect"].y))
+
+        if earth_explosive_active and earth_explosive_pos:
+            WINDOW.blit(earth_explosive_frames[earth_explosive_frame], earth_explosive_pos)
+            earth_explosive_frame += 1
+            if earth_explosive_frame >= len(earth_explosive_frames):
+                earth_explosive_active = False
+                earth_explosive_frame = 0
+
 
     pygame.draw.rect(WINDOW, "green", sun_health_rect)
     pygame.draw.rect(WINDOW, "red", black_tortoise_health_rect)
 
 def main():
+    global earth_explosive_active, earth_explosive_pos
+
     run = True
 
     sun = pygame.Rect(50, HEIGHT - PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT)
@@ -64,7 +86,7 @@ def main():
     black_tortoise_health_rect = pygame.Rect(WIDTH - 300 - 10, 10, 300, 40)
 
     spells = []
-    last_lightning_spell_time = pygame.time.get_ticks()
+    last_sun_black_spell_spell_time = pygame.time.get_ticks()
     last_earth_spell_time = pygame.time.get_ticks() 
 
     while run:
@@ -81,10 +103,10 @@ def main():
         if keys[pygame.K_RIGHT] and sun.x + PLAYER_VEL + sun.width <= WIDTH:
             sun.x += PLAYER_VEL
 
-        if keys[pygame.K_SPACE] and current_time - last_lightning_spell_time > 500:
-            lightning_spell_rect = pygame.Rect(sun.x + sun.width, sun.y + sun.height // 2 - 50, 100, 100)
-            spells.append({"type": "lightning", "rect": lightning_spell_rect})
-            last_lightning_spell_time = current_time
+        if keys[pygame.K_SPACE] and current_time - last_sun_black_spell_spell_time > 500:
+            sun_black_spell_spell_rect = pygame.Rect(sun.x + sun.width, sun.y + sun.height // 2 - 50, 100, 100)
+            spells.append({"type": "sun_black_spell", "rect": sun_black_spell_spell_rect})
+            last_sun_black_spell_spell_time = current_time
 
         if current_time - last_earth_spell_time >= 2000:
             earth_spell_rect = pygame.Rect(black_tortoise.x, black_tortoise.y + black_tortoise.height // 2 - 50, 100, 100)
@@ -92,7 +114,7 @@ def main():
             last_earth_spell_time = current_time
 
         for spell in spells[:]:
-            if spell["type"] == "lightning":
+            if spell["type"] == "sun_black_spell":
                 spell["rect"].x += SPELL_VEL
                 if spell["rect"].colliderect(black_tortoise):
                     black_tortoise_health -= 10
@@ -107,14 +129,16 @@ def main():
                     sun_health -= 10
                     sun_health_rect.width = sun_health * 3
                     spells.remove(spell)
+                    earth_explosive_active = True
+                    earth_explosive_pos = (sun.x, sun.y)
                 elif spell["rect"].x < 0:
                     spells.remove(spell)
 
         for spell in spells[:]:
             for other_spell in spells[:]:
                 if spell != other_spell and spell["rect"].colliderect(other_spell["rect"]):
-                    if (spell["type"] == "lightning" and other_spell["type"] == "earth") or \
-                            (spell["type"] == "earth" and other_spell["type"] == "lightning"):
+                    if (spell["type"] == "sun_black_spell" and other_spell["type"] == "earth") or \
+                            (spell["type"] == "earth" and other_spell["type"] == "sun_black_spell"):
                         spells.remove(spell)
                         spells.remove(other_spell)
 
