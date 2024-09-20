@@ -1,285 +1,230 @@
 import pygame
-import math
-import random
 import sys
+import time
+import random
 
 pygame.init()
-
-clock = pygame.time.Clock()
-FPS = 60
 
 SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 750
 
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Answer And Move")
+pygame.display.set_caption("2D Platformer with Moving Platforms")
 
-bg = pygame.image.load("moving_bg2.jpg").convert()
-bg_width = bg.get_width()
+clock = pygame.time.Clock()
 
-hero_standing = pygame.image.load("hero.png").convert_alpha()
-hero_jumping = pygame.image.load("hero_jump.png").convert_alpha()
-hero_ducking = pygame.image.load("hero_duck.png").convert_alpha()
+player_image = pygame.image.load('hero.png')
+platform_image = pygame.image.load('tiles1.png')
+coin_image = pygame.image.load('stone_earth.png')
+background_image = pygame.image.load('moving_bg2.jpg')
+spike_image = pygame.image.load('spike.png')  
+heart_image = pygame.image.load('heart.png')  
 
-hero_width = int(hero_standing.get_width() * 0.75)
-hero_height = int(hero_standing.get_height() * 0.75)
-hero_standing = pygame.transform.scale(hero_standing, (hero_width, hero_height))
-hero_jumping = pygame.transform.scale(hero_jumping, (hero_width, hero_height))
-hero_ducking = pygame.transform.scale(hero_ducking, (hero_width, hero_height // 2))
+# Resize images if necessary
+player_width, player_height = 100, 150
+player_image = pygame.transform.scale(player_image, (player_width, player_height))  # Increased player size
+platform_image = pygame.transform.scale(platform_image, (200, 80))
+coin_image = pygame.transform.scale(coin_image, (60, 60))
+background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+spike_image = pygame.transform.scale(spike_image, (60, 60))
+heart_image = pygame.transform.scale(heart_image, (40, 40))
 
-current_hero_image = hero_standing
+# Player settings
+player_x = SCREEN_WIDTH // 2
+player_y = SCREEN_HEIGHT - 150  
+player_speed = 5
+player_jump = False
+on_platform = False
+jump_height = 20
+double_jump_height = 25  
+gravity = 1
+jump_velocity = 0
+fall_speed = 15  
 
-obstacle = pygame.image.load("obstacle.png").convert_alpha()
-obstacle = pygame.transform.scale(obstacle, (150, 150)) 
-obstacle_width = obstacle.get_width()
-obstacle_height = obstacle.get_height()
+ground_level = SCREEN_HEIGHT - player_height 
 
-# Load and scale multiple stone images
-stone1 = pygame.image.load("stone1.png").convert_alpha()
-stone1 = pygame.transform.scale(stone1, (120, 120))
-stone1_width = stone1.get_width()
-stone1_height = stone1.get_height()
+background_x = 0
+background_y = 0
 
-stone2 = pygame.image.load("stone2.png").convert_alpha()
-stone2 = pygame.transform.scale(stone2, (120, 120))
-stone2_width = stone2.get_width()
-stone2_height = stone2.get_height()
 
-stone3 = pygame.image.load("stone3.png").convert_alpha()
-stone3 = pygame.transform.scale(stone3, (120, 120))
-stone3_width = stone3.get_width()
-stone3_height = stone3.get_height()
+platform_speed = 2  
+platforms = [
+    pygame.Rect(100, 500, 200, 20),
+    pygame.Rect(400, 400, 200, 20),
+    pygame.Rect(700, 300, 200, 20),
+    pygame.Rect(1000, 200, 200, 20),
+]
 
-scroll = 0
-tiles = math.ceil(SCREEN_WIDTH / bg_width) + 1
+# Coin settings (Attach random number of coins to platforms)
+def generate_coins():
+    coins = []
+    for platform in platforms:
+        num_coins = random.randint(1, 2) 
+        for _ in range(num_coins):
+            coin_x = platform.x + random.randint(10, platform.width - 70) 
+            coin_y = platform.y - 60  
+            coins.append({'rect': pygame.Rect(coin_x, coin_y, 60, 60), 'platform': platform})
+    return coins
 
-hero_x = 100
-hero_y = SCREEN_HEIGHT - hero_height - 50
-hero_speed = 5
-hero_moving = False
-jumping = False
-ducking = False
+coins = generate_coins()
+total_stones = 30  
 
-jump_velocity = 32
-gravity = 1 
+# Spike settings
+spikes = [
+    pygame.Rect(400, 580, 60, 60),
+    pygame.Rect(700, 480, 60, 60),
+]
 
-obstacle_x = SCREEN_WIDTH
-obstacle_y = (SCREEN_HEIGHT - obstacle_height) // 2  
-obstacle_speed = 4  
+# Player lives
+lives = 3
+spike_hits = 0  
 
-obstacle_counter = 0  
-total_obstacles = 10 
-num_trigger_obstacles = 4 
-trigger_obstacles = [] 
-show_lose_message = False
+# Collected stones
+collected_stones = 0
 
-start_ticks = pygame.time.get_ticks() 
 
-# Stone properties
-stone_images = [stone1, stone2, stone3]
-stone_widths = [stone1_width, stone2_width, stone3_width]
-stone_heights = [stone1_height, stone2_height, stone3_height]
-stone_speed_min = 1
-stone_speed_max = 3
-stone_spawn_interval = 2000  # Time in milliseconds
-stones = []  # List to store stone data
-last_stone_spawn_time = pygame.time.get_ticks()
+jump_time = 0
+double_jump_time_window = 0.3  
 
-# Font settings
-font = pygame.font.SysFont('Times New Roman', 40, bold=True)  
-lose_font = pygame.font.SysFont('Times New Roman', 100, bold=True) 
-button_font = pygame.font.SysFont('Arial', 50)  
+# Main game loop
+running = True
+game_over = False
+while running:
+    current_time = time.time()  #double tap panna paayum
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
 
-button_color = (0, 200, 0)
-button_hover_color = (0, 255, 0)
-button_width = 300
-button_height = 100
-button_rect = pygame.Rect(
-    (SCREEN_WIDTH - button_width) // 2,
-    (SCREEN_HEIGHT) // 2 + 50,
-    button_width,
-    button_height
-)
-button_text = "Play Again"
+    if not game_over:
+        # Key presses
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            player_x -= player_speed
+        if keys[pygame.K_RIGHT]:
+            player_x += player_speed
+        if keys[pygame.K_UP]:
+            if not player_jump: 
+                player_jump = True
+                jump_velocity = jump_height
+                jump_time = current_time  
+            elif current_time - jump_time <= double_jump_time_window: 
+                player_jump = True
+                jump_velocity = double_jump_height 
+                jump_time = 0  
 
-def reset_game():
-    global hero_x, hero_y, scroll, obstacle_x, obstacle_y, obstacle_speed
-    global obstacle_counter, show_lose_message, start_ticks, jump_velocity, trigger_obstacles
-    global stones, last_stone_spawn_time
-
-    hero_x = 100
-    hero_y = SCREEN_HEIGHT - hero_height - 50
-    scroll = 0
-    obstacle_x = SCREEN_WIDTH
-    obstacle_y = (SCREEN_HEIGHT - obstacle_height) // 2
-    obstacle_speed = 4
-    obstacle_counter = 0
-    show_lose_message = False
-    start_ticks = pygame.time.get_ticks()
-    jump_velocity = 32
-    stones = []
-    last_stone_spawn_time = pygame.time.get_ticks()
-
-    trigger_obstacles = random.sample(range(1, total_obstacles + 1), num_trigger_obstacles)
-    print(f"New trigger obstacles: {trigger_obstacles}")  
-
-def draw_lose_screen():
-    screen.fill((0, 0, 0)) 
-
-    lose_text = lose_font.render("YOU LOSE !", True, (255, 0, 0))  
-    lose_text_rect = lose_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 100))
-    screen.blit(lose_text, lose_text_rect)
-
-    mouse_pos = pygame.mouse.get_pos()
-
-    if button_rect.collidepoint(mouse_pos):
-        current_button_color = button_hover_color
-    else:
-        current_button_color = button_color
-
-    pygame.draw.rect(screen, current_button_color, button_rect, border_radius=10)
-
-    button_label = button_font.render(button_text, True, (255, 255, 255))
-    button_label_rect = button_label.get_rect(center=button_rect.center)
-    screen.blit(button_label, button_label_rect)
-
-    pygame.display.update()
-
-def spawn_stone():
-    x_position = SCREEN_WIDTH
-    y_position = random.randint(0, SCREEN_HEIGHT - max(stone_heights))
-    speed = random.uniform(stone_speed_min, stone_speed_max)
-    image_index = random.randint(0, len(stone_images) - 1)
-    stones.append({'x': x_position, 'y': y_position, 'speed': speed, 'image': stone_images[image_index], 'width': stone_widths[image_index], 'height': stone_heights[image_index]})
-    print(f"Spawned stone at ({x_position}, {y_position}) with speed {speed}")
-
-def update_stones():
-    global last_stone_spawn_time
-    current_time = pygame.time.get_ticks()
-
-    if current_time - last_stone_spawn_time > stone_spawn_interval:
-        spawn_stone()
-        last_stone_spawn_time = current_time
-
-    for stone_data in stones:
-        stone_data['x'] -= stone_data['speed']
-
-    stones[:] = [s for s in stones if s['x'] > -s['width']]
-
-def handle_stone_collisions(hero_rect):
-    for stone_data in stones:
-        stone_rect = pygame.Rect(stone_data['x'], stone_data['y'], stone_data['width'], stone_data['height'])
-        if hero_rect.colliderect(stone_rect):
-            print(f"Collision detected with stone at ({stone_data['x']}, {stone_data['y']})!")
-            return True
-    return False
-
-def create_obstacle():
-    global obstacle_x, obstacle_y, obstacle_speed, obstacle_type
-    obstacle_type = random.choice(['normal', 'stone'])  # Decide whether the obstacle is a normal one or a stone
-    if obstacle_type == 'normal':
-        obstacle_x = SCREEN_WIDTH
-        obstacle_y = (SCREEN_HEIGHT - obstacle_height) // 2
-        obstacle_speed = 4
-    else:
-        obstacle_x = SCREEN_WIDTH
-        obstacle_y = random.randint(0, SCREEN_HEIGHT - max(stone_heights))
-        obstacle_speed = random.uniform(stone_speed_min, stone_speed_max)
-    print(f"Created a new obstacle of type: {obstacle_type}")
-
-# Game loop
-run = True
-game_state = "playing"  
-
-create_obstacle()  # Initialize the first obstacle
-
-while run:
-    clock.tick(FPS)
-
-    if game_state == "playing":
-        for i in range(tiles):
-            screen.blit(bg, (i * bg_width + scroll, 0))
-
-        scroll -= 2
-        if abs(scroll) > bg_width:
-            scroll = 0
-
-        if jumping:
-            hero_y -= jump_velocity
-            jump_velocity -= gravity
-            current_hero_image = hero_jumping
-            if jump_velocity < -32:
-                jumping = False
-                jump_velocity = 32
-        elif ducking:
-            hero_y = SCREEN_HEIGHT - (hero_height // 2) - 50
-            current_hero_image = hero_ducking
+        # Gravity and jump mechanics
+        if player_jump:
+            player_y -= jump_velocity  #player mele move pannuvanga
+            jump_velocity -= gravity  # Reduce velocity due to gravity
+            if jump_velocity < -jump_height:  # If velocity is below a certain limit, stop the jump
+                player_jump = False
         else:
-            hero_y = SCREEN_HEIGHT - hero_height - 50
-            current_hero_image = hero_standing
+            # Apply gravity when the player is not jumping
+            player_y += fall_speed
 
-        if obstacle_type == 'normal':
-            obstacle_x -= obstacle_speed
-            if obstacle_x < -obstacle_width:
-                create_obstacle()
-                obstacle_counter += 1
-        else:
-            update_stones()  # Only update stones if the obstacle is of type 'stone'
+        # Boundary checks to keep the player on the screen
+        if player_x < 0:
+            player_x = 0
+        elif player_x > SCREEN_WIDTH - player_width:  
+            player_x = SCREEN_WIDTH - player_width
+        if player_y > ground_level: 
+            player_y = ground_level
+            player_jump = False
 
-        for stone_data in stones:
-            screen.blit(stone_data['image'], (stone_data['x'], stone_data['y']))
+        # Move platforms, coins, and spikes together to the left and reset when they go off screen
+        for platform in platforms:
+            platform.x -= platform_speed 
+            if platform.right < 0: 
+                platform.x = SCREEN_WIDTH  
+                
+                coins = [coin for coin in coins if coin['platform'] != platform]  # Remove old coins
+                num_new_coins = random.randint(1, 2)  # Random number of new coins
+                for _ in range(num_new_coins):
+                    coin_x = platform.x + random.randint(10, platform.width - 70)
+                    coin_y = platform.y - 60
+                    coins.append({'rect': pygame.Rect(coin_x, coin_y, 60, 60), 'platform': platform})
 
-        if obstacle_type == 'normal':
-            screen.blit(obstacle, (obstacle_x, obstacle_y))
-        
-        hero_rect = pygame.Rect(hero_x, hero_y, hero_width, hero_height)
-        obstacle_rect = pygame.Rect(obstacle_x, obstacle_y, obstacle_width, obstacle_height)
+        for coin in coins[:]:
+            # coin platform koodeve move aagum
+            coin['rect'].x = coin['platform'].x + 50
+            coin['rect'].y = coin['platform'].y - 60  #coin platform mele irukku 
 
-        if hero_rect.colliderect(obstacle_rect) and obstacle_type == 'normal':
-            if obstacle_counter in trigger_obstacles:
-                print(f"Collision detected with obstacle {obstacle_counter}! Trigger puzzle.")
-                run = False  
-            else:
-                print(f"Collision detected with obstacle {obstacle_counter}! You lose.")
-                game_state = "game_over" 
+        for spike in spikes:
+            spike.x -= platform_speed 
+            if spike.right < 0:
+                spike.x = SCREEN_WIDTH  
 
-        if handle_stone_collisions(hero_rect):
-            game_state = "game_over"
+        # Collision detection with platforms
+        player_rect = pygame.Rect(player_x, player_y, player_width, player_height) 
+        on_platform = False  
+        for platform in platforms:
+            if player_rect.colliderect(platform) and player_y + player_height <= platform.y + fall_speed:
+                player_y = platform.y - player_height  # Adjust for player size
+                on_platform = True
+                jump_velocity = 0  # Reset jump velocity when on platform
 
-        elapsed_time = (pygame.time.get_ticks() - start_ticks) // 1000 
-        timer_text = font.render(f"Time: {elapsed_time}s", True, (255, 255, 255)) 
-        screen.blit(timer_text, (SCREEN_WIDTH - 200, 10))  
+        # Collision detection with coins
+        for coin in coins[:]:
+            if player_rect.colliderect(coin['rect']):
+                coins.remove(coin)
+                collected_stones += 1  
+                if collected_stones >= total_stones:
+                    #ithuthan enxt pageku kondu povum
+                    pass
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RIGHT:
-                    hero_moving = True
-                if event.key == pygame.K_UP and not jumping:
-                    jumping = True
-                    ducking = False
-                if event.key == pygame.K_DOWN and not jumping:
-                    ducking = True
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_RIGHT:
-                    hero_moving = False
-                if event.key == pygame.K_DOWN:
-                    ducking = False
+        # Collision detection with spikes 
+        for spike in spikes:
+            if player_rect.colliderect(spike):
+                spike_hits += 1
+                if spike_hits == 1:
+                    lives -= 1
+                    player_x = SCREEN_WIDTH // 2
+                    player_y = SCREEN_HEIGHT - 150  # Reset player position
+                elif spike_hits == 2:
+                    lives -= 1
+                    player_x = SCREEN_WIDTH // 2
+                    player_y = SCREEN_HEIGHT - 150  # Reset player position
+                elif spike_hits >= 3:
+                    game_over = True
+                break  
 
-        pygame.display.update()
+    # Drawing
+    screen.fill(WHITE)
 
-    elif game_state == "game_over":
-        draw_lose_screen()
+    screen.blit(background_image, (background_x, background_y))
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if button_rect.collidepoint(event.pos):
-                    reset_game()
-                    game_state = "playing"
-                    create_obstacle()  # Initialize a new obstacle when restarting
+    for platform in platforms:
+        screen.blit(platform_image, (platform.x, platform.y))
 
-pygame.quit()
-sys.exit()
+    for coin in coins:
+        screen.blit(coin_image, (coin['rect'].x, coin['rect'].y))
+
+    for spike in spikes:
+        screen.blit(spike_image, (spike.x, spike.y))
+
+    screen.blit(player_image, (player_x, player_y))
+
+    for i in range(lives):
+        screen.blit(heart_image, (10 + i * 50, 10))  
+
+    #ithuthan stones collect pannethe draw pannum
+    font = pygame.font.SysFont(None, 36)
+    collected_text = font.render(f"Collected Stones: {collected_stones}/{total_stones}", True, WHITE)
+    
+    # collected stones position eh adjust pannethu
+    text_rect = collected_text.get_rect()
+    text_rect.topright = (SCREEN_WIDTH - 10, 10)  # 10 pixels from the top and right edges
+    screen.blit(collected_text, text_rect)
+
+
+    if game_over:
+        game_over_font = pygame.font.SysFont(None, 72)
+        game_over_text = game_over_font.render("Game Over!", True, RED)
+        screen.blit(game_over_text, (SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 100))
+
+    pygame.display.flip()
+    clock.tick(60)
