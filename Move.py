@@ -12,7 +12,7 @@ WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("2D Platformer with Moving Platforms")
+pygame.display.set_caption("Earth mode : Collect the stones!")
 
 clock = pygame.time.Clock()
 
