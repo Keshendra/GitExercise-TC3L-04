@@ -24,7 +24,7 @@ pygame.display.set_caption("2D Platformer with Moving Platforms")
 clock = pygame.time.Clock()
 
 # Load images
-player_image = pygame.image.load('move_1.png')
+player_image = pygame.image.load('hero.png')
 platform_image = pygame.image.load('platform2.png')
 coin_image = pygame.image.load('stone_water.png')
 background_image = pygame.image.load('water_bg.png')
