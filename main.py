@@ -1,135 +1,240 @@
 import pygame
+import sys
+import time
+import random
 
+# Initialize Pygame
 pygame.init()
 
-WIDTH = 1200
-HEIGHT = 750
+# Screen dimensions
+SCREEN_WIDTH = 1200
+SCREEN_HEIGHT = 750
 
-WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("MYSTIC QUEST")
+# Colors
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLACK = (0, 0, 0)
 
-BG = pygame.image.load("bg_img.png")
-BG = pygame.transform.scale(BG, (WIDTH, HEIGHT))
+# Screen setup
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("2D Platformer with Moving Platforms")
 
-BG_GAME = pygame.image.load("img_2.png")
-BG_GAME = pygame.transform.scale(BG_GAME, (WIDTH, HEIGHT))
+# Clock for controlling the frame rate
+clock = pygame.time.Clock()
 
-# Load button images
-start_img = pygame.image.load("play.png").convert_alpha()
-quit_img = pygame.image.load("quit.png").convert_alpha()
-left_img = pygame.image.load("left_button.png").convert_alpha()
-right_img = pygame.image.load("right_button.png").convert_alpha()
+# Load images
+player_image = pygame.image.load('move_1.png')
+platform_image = pygame.image.load('platform2.png')
+coin_image = pygame.image.load('stone_water.png')
+background_image = pygame.image.load('water_bg.png')
+spike_image = pygame.image.load('jellyfish.png')  # Add your own spike image
+heart_image = pygame.image.load('heart.png')  # Add your own heart image
 
-# Button class
-class Button():
-    def __init__(self, x, y, image):
-        self.image = image
-        self.rect = self.image.get_rect()
-        self.rect.topleft = (x, y)
-        self.clicked = False
+# Resize images if necessary
+player_width, player_height = 100, 150
+player_image = pygame.transform.scale(player_image, (player_width, player_height))  # Increased player size
+platform_image = pygame.transform.scale(platform_image, (200, 80))
+coin_image = pygame.transform.scale(coin_image, (60, 60))
+background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+spike_image = pygame.transform.scale(spike_image, (80, 80))  # Increased spike size
+heart_image = pygame.transform.scale(heart_image, (40, 40))
 
-    def draw(self, surface):
-        action = False
-        pos = pygame.mouse.get_pos()
+# Player settings
+player_x = SCREEN_WIDTH // 2
+player_y = SCREEN_HEIGHT - 150  # Start higher above the bottom to ensure player visibility
+player_speed = 5
+player_jump = False
+on_platform = False
+jump_height = 20
+double_jump_height = 25  # Higher for double jump
+gravity = 1
+jump_velocity = 0
+fall_speed = 15  
 
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1 and not self.clicked:
-                self.clicked = True
-                action = True
+ground_level = SCREEN_HEIGHT - player_height  
 
-        if pygame.mouse.get_pressed()[0] == 0:
-            self.clicked = False
+background_x = 0 
+background_y = 0
 
-        surface.blit(self.image, (self.rect.x, self.rect.y))
-        return action 
-
-# Position buttons on screen
-button_x = (WIDTH - start_img.get_width()) // 2
-button_y = (HEIGHT - start_img.get_height()) // 2
-start_button = Button(button_x, button_y, start_img)
-
-quit_button_x = (WIDTH - quit_img.get_width()) // 2
-quit_button_y = button_y + start_img.get_height() + 30
-quit_button = Button(quit_button_x, quit_button_y, quit_img)
-
-left_button = Button(20, HEIGHT // 2 - left_img.get_height() // 2, left_img)
-right_button = Button(WIDTH - right_img.get_width() - 20, HEIGHT // 2 - right_img.get_height() // 2, right_img)
-
-MENU = 'menu'
-INSTRUCTIONS = 'instructions'
-GAME = 'game'
-state = MENU
-
-# Define the instruction pages list
-instruction_texts = [
-    "Welcome to Mystic Quest!\n\nUse arrow keys to move your character.\nPress SPACE to jump.\nAvoid obstacles and collect coins.",
-    "In the game:\n\n- Use the UP arrow to jump higher.\n- Use the DOWN arrow to crouch.\n- Collect special items for bonus points.",
-    "Good luck!\n\nIf you have any issues, refer to the Help section in the main menu.\n\nClick right to start the game or left to go back to the main menu."
+platform_speed = 2  
+platforms = [
+    pygame.Rect(100, 500, 200, 20),
+    pygame.Rect(400, 400, 200, 20),
+    pygame.Rect(700, 300, 200, 20),
+    pygame.Rect(1000, 200, 200, 20),
 ]
-current_instruction = 0
 
-# Font for instructions
-font = pygame.font.Font(None, 36)
+def generate_coins():
+    coins = []
+    for platform in platforms:
+        num_coins = random.randint(1, 2) 
+        for _ in range(num_coins):
+            coin_x = platform.x + random.randint(10, platform.width - 70) 
+            coin_y = platform.y - 60  
+            coins.append({'rect': pygame.Rect(coin_x, coin_y, 60, 60), 'platform': platform})
+    return coins
 
-def draw_main_menu():
-    WINDOW.blit(BG, (0, 0))
-    if start_button.draw(WINDOW):
-        return INSTRUCTIONS
-    if quit_button.draw(WINDOW):
-        pygame.quit()
-        exit()
-    pygame.display.flip()
-    return MENU
+coins = generate_coins()
+total_stones = 30 
 
-def draw_instructions_page():
-    WINDOW.blit(BG, (0, 0))  # You can set a background if needed
-    # Render instruction text
-    text_surface = font.render(instruction_texts[current_instruction], True, (255, 255, 255))
-    text_rect = text_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2))
-    WINDOW.blit(text_surface, text_rect)
+# Spike settings
+spikes = [
+    pygame.Rect(400, 580, 80, 80), 
+    pygame.Rect(700, 480, 80, 80),  
+]
 
-    # Draw navigation buttons
-    left_button.draw(WINDOW)
-    right_button.draw(WINDOW)
-    pygame.display.flip()
+lives = 3
+spike_hits = 0 
 
-def draw_game_screen():
-    WINDOW.blit(BG_GAME, (0, 0))
-    pygame.display.flip()
+collected_stones = 0
 
-def main():
-    global state, current_instruction
-    run = True
+jump_time = 0
+double_jump_time_window = 0.3  
 
-    while run:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-                break
+# Main game loop
+running = True
+game_over = False
+while running:
+    current_time = time.time() 
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+    if not game_over:
+        # Key presses
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            player_x -= player_speed
+        if keys[pygame.K_RIGHT]:
+            player_x += player_speed
+        if keys[pygame.K_UP]:
+            if not player_jump:  # First jump
+                player_jump = True
+                jump_velocity = jump_height
+                jump_time = current_time  
+            elif current_time - jump_time <= double_jump_time_window: 
+                player_jump = True
+                jump_velocity = double_jump_height  
+                jump_time = 0 
+
+      
+        if player_jump:
+            player_y -= jump_velocity 
+            jump_velocity -= gravity  
+            if jump_velocity < -jump_height:  
+                player_jump = False
+        else:
+            # Apply gravity when the player is not jumping
+            player_y += fall_speed
+
+        # Boundary checks to keep the player on the screen
+        if player_x < 0:
+            player_x = 0
+        elif player_x > SCREEN_WIDTH - player_width:  
+            player_x = SCREEN_WIDTH - player_width
+        if player_y > ground_level:  
+            player_y = ground_level
+            player_jump = False
+
+        # Move platforms, coins, and spikes together to the left and reset when they go off screen
+        for platform in platforms:
+            platform.x -= platform_speed 
+            if platform.right < 0: 
+                platform.x = SCREEN_WIDTH 
+                
+                coins = [coin for coin in coins if coin['platform'] != platform]  # Remove old coins
+                num_new_coins = random.randint(1, 2)  # Random number of new coins
+                for _ in range(num_new_coins):
+                    coin_x = platform.x + random.randint(10, platform.width - 70)
+                    coin_y = platform.y - 60
+                    coins.append({'rect': pygame.Rect(coin_x, coin_y, 60, 60), 'platform': platform})
+
+        for coin in coins[:]:
             
-        if state == MENU:
-            state = draw_main_menu()
-        elif state == INSTRUCTIONS:
-            draw_instructions_page()
-            while True:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        exit()
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        pos = pygame.mouse.get_pos()
-                        if left_button.rect.collidepoint(pos):
-                            state = MENU
-                            break
-                        if right_button.rect.collidepoint(pos):
-                            current_instruction = (current_instruction + 1) % len(instruction_texts)
-                            state = INSTRUCTIONS
-                            break
-                if state == MENU:
-                    break
-        elif state == GAME:
-            draw_game_screen()
+            coin['rect'].x = coin['platform'].x + 50
+            coin['rect'].y = coin['platform'].y - 60 
 
-    pygame.quit()
+        for spike in spikes:
+            spike.x -= platform_speed  # Move spikes with platforms
+            if spike.right < 0:
+                spike.x = SCREEN_WIDTH  # Reset spike position
 
-main()
+        
+        player_rect = pygame.Rect(player_x, player_y, player_width, player_height)  
+        on_platform = False 
+        for platform in platforms:
+            if player_rect.colliderect(platform) and player_y + player_height <= platform.y + fall_speed:
+                player_y = platform.y - player_height  # Adjust for player size
+                on_platform = True
+                jump_velocity = 0 
+
+        # Collision detection with coins
+        for coin in coins[:]:
+            if player_rect.colliderect(coin['rect']):
+                coins.remove(coin)
+                collected_stones += 1  
+                if collected_stones >= total_stones:
+                    
+                    pass
+
+        # Collision detection with spikes
+        for spike in spikes:
+            if player_rect.colliderect(spike):
+                spike_hits += 1
+                if spike_hits == 1:
+                    lives -= 1
+                    player_x = SCREEN_WIDTH // 2
+                    player_y = SCREEN_HEIGHT - 150  # Reset player position
+                elif spike_hits == 2:
+                    lives -= 1
+                    player_x = SCREEN_WIDTH // 2
+                    player_y = SCREEN_HEIGHT - 150  # Reset player position
+                elif spike_hits >= 3:
+                    game_over = True
+                break  
+
+    # Drawing
+    screen.fill(WHITE)
+
+    # Draw the background (static)
+    screen.blit(background_image, (background_x, background_y))
+
+    # Draw platforms
+    for platform in platforms:
+        screen.blit(platform_image, (platform.x, platform.y))
+
+    # Draw coins
+    for coin in coins:
+        screen.blit(coin_image, (coin['rect'].x, coin['rect'].y))
+
+    # Draw spikes
+    for spike in spikes:
+        screen.blit(spike_image, (spike.x, spike.y))
+
+    # Draw player
+    screen.blit(player_image, (player_x, player_y))
+
+    # Draw lives
+    for i in range(lives):
+        screen.blit(heart_image, (10 + i * 50, 10))
+
+    # Draw collected stones text at the top right corner
+    font = pygame.font.Font(None, 36)
+    stones_text = font.render(f'Stones Collected: {collected_stones}/{total_stones}', True, WHITE)
+    text_rect = stones_text.get_rect()
+    text_rect.topright = (SCREEN_WIDTH - 10, 10)  # Position text at the top right corner
+    screen.blit(stones_text, text_rect)
+
+    if game_over:
+        font = pygame.font.Font(None, 72)
+        game_over_text = font.render('Game Over', True, RED)
+        screen.blit(game_over_text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2 - 50))
+        pygame.display.flip()
+        pygame.time.wait(2000)  # Wait for 2 seconds before quitting
+        pygame.quit()
+        sys.exit()
+
+    pygame.display.flip()
+    clock.tick(60)  # Frame rate
