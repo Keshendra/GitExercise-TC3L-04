@@ -30,10 +30,20 @@ blue_dragon = pygame.image.load("blue_dragon.png").convert_alpha()
 blue_dragon_img = pygame.transform.scale(blue_dragon, (PLAYER_WIDTH, PLAYER_HEIGHT))
 
 water_img = pygame.image.load("water_atk.png").convert_alpha()
-water_spell = pygame.transform.scale(water_img, (100, 100))
+water_spell = pygame.transform.scale(water_img, (200, 200))
 
-lightning_img = pygame.image.load("lightning_atk.png").convert_alpha()
-lightning_spell = pygame.transform.scale(lightning_img, (100, 100))
+sun_black_spell_img = pygame.image.load("sun_black_spell.png").convert_alpha()
+sun_black_spell = pygame.transform.scale(sun_black_spell_img, (200, 200))
+
+fire_spell_frame = [pygame.image.load(f"fire_spell_frame_{i}.png").convert_alpha() for i in range(1, 9)]
+current_fire_frame = 0
+frame_delay = 1
+frame_count = 0
+
+explosive_frames = [pygame.image.load(f"explosive_frame_{i}.png").convert_alpha() for i in range(1, 11)]
+explosive_active = False
+explosive_pos = None
+explosive_frame = 0
 
 def draw_IMG():
     
@@ -45,8 +55,8 @@ def draw(sun, blue_dragon, sun_health_rect, blue_dragon_health_rect, spells):
     WINDOW.blit(blue_dragon_img, (blue_dragon.x, blue_dragon.y))
 
     for spell in spells:
-        if spell["type"] == "lightning":
-            WINDOW.blit(lightning_spell, (spell["rect"].x, spell["rect"].y))
+        if spell["type"] == "sun_black_spell":
+            WINDOW.blit(sun_black_spell, (spell["rect"].x, spell["rect"].y))
         if spell["type"] == "water":
             WINDOW.blit(water_spell, (spell["rect"].x, spell["rect"].y))
 
@@ -64,7 +74,7 @@ def main():
     blue_dragon_health_rect = pygame.Rect(WIDTH - 300 - 10, 10, 300, 40)
 
     spells = []
-    last_lightning_spell_time = pygame.time.get_ticks()
+    last_sun_black_spell_spell_time = pygame.time.get_ticks()
     last_water_spell_time = pygame.time.get_ticks() 
 
     while run:
@@ -81,10 +91,10 @@ def main():
         if keys[pygame.K_RIGHT] and sun.x + PLAYER_VEL + sun.width <= WIDTH:
             sun.x += PLAYER_VEL
 
-        if keys[pygame.K_SPACE] and current_time - last_lightning_spell_time > 500:
-            lightning_spell_rect = pygame.Rect(sun.x + sun.width, sun.y + sun.height // 2 - 50, 100, 100)
-            spells.append({"type": "lightning", "rect": lightning_spell_rect})
-            last_lightning_spell_time = current_time
+        if keys[pygame.K_SPACE] and current_time - last_sun_black_spell_spell_time > 500:
+            sun_black_spell_spell_rect = pygame.Rect(sun.x + sun.width, sun.y + sun.height // 2 - 50, 100, 100)
+            spells.append({"type": "sun_black_spell", "rect": sun_black_spell_spell_rect})
+            last_sun_black_spell_spell_time = current_time
 
         if current_time - last_water_spell_time >= 3000:
             water_spell_rect = pygame.Rect(blue_dragon.x, blue_dragon.y + blue_dragon.height // 2 - 50, 100, 100)
@@ -92,7 +102,7 @@ def main():
             last_water_spell_time = current_time
 
         for spell in spells[:]:
-            if spell["type"] == "lightning":
+            if spell["type"] == "sun_black_spell":
                 spell["rect"].x += SPELL_VEL
                 if spell["rect"].colliderect(blue_dragon):
                     blue_dragon_health -= 10
@@ -113,8 +123,8 @@ def main():
         for spell in spells[:]:
             for other_spell in spells[:]:
                 if spell != other_spell and spell["rect"].colliderect(other_spell["rect"]):
-                    if (spell["type"] == "lightning" and other_spell["type"] == "water") or \
-                            (spell["type"] == "water" and other_spell["type"] == "lightning"):
+                    if (spell["type"] == "sun_black_spell" and other_spell["type"] == "water") or \
+                            (spell["type"] == "water" and other_spell["type"] == "sun_black_spell"):
                         spells.remove(spell)
                         spells.remove(other_spell)
 
