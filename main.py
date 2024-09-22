@@ -1,6 +1,5 @@
 import pygame
 import sys
-import time
 import random
 
 # Initialize Pygame
@@ -13,90 +12,81 @@ SCREEN_HEIGHT = 750
 # Colors
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLACK = (0, 0, 0)
 
 # Screen setup
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("2D Platformer with Moving Platforms")
+pygame.display.set_caption("Shark Attack: Collect Oxygen Bubbles")
 
 # Clock for controlling the frame rate
 clock = pygame.time.Clock()
 
 # Load images
-player_image = pygame.image.load('hero.png')
-platform_image = pygame.image.load('platform2.png')
-coin_image = pygame.image.load('stone_water.png')
+player_image = pygame.image.load('sun_moving_1.png')
+bubble_image = pygame.image.load('water_stone.png')  # Oxygen bubble image
 background_image = pygame.image.load('water_bg.png')
-spike_image = pygame.image.load('jellyfish.png')  # Add your own spike image
-heart_image = pygame.image.load('heart.png')  # Add your own heart image
+heart_image = pygame.image.load('heart.png')
 
 # Resize images if necessary
 player_width, player_height = 100, 150
-player_image = pygame.transform.scale(player_image, (player_width, player_height))  # Increased player size
-platform_image = pygame.transform.scale(platform_image, (200, 80))
-coin_image = pygame.transform.scale(coin_image, (60, 60))
+player_image = pygame.transform.scale(player_image, (player_width, player_height))
+bubble_image = pygame.transform.scale(bubble_image, (60, 60))
 background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
-spike_image = pygame.transform.scale(spike_image, (80, 80))  # Increased spike size
 heart_image = pygame.transform.scale(heart_image, (40, 40))
+
+# Load left and right shark sprite sheets
+left_shark_sprites = [pygame.image.load(f'shark_right_000{i}.png').convert_alpha() for i in range(1, 12)]
+right_shark_sprites = [pygame.image.load(f'shark_000{i}.png').convert_alpha() for i in range(1, 12)]
+left_shark_sprites = [pygame.transform.scale(img, (200, 120)) for img in left_shark_sprites]
+right_shark_sprites = [pygame.transform.scale(img, (200, 120)) for img in right_shark_sprites]
 
 # Player settings
 player_x = SCREEN_WIDTH // 2
-player_y = SCREEN_HEIGHT - 150  # Start higher above the bottom to ensure player visibility
+player_y = SCREEN_HEIGHT - 150
 player_speed = 5
 player_jump = False
-on_platform = False
-jump_height = 20
-double_jump_height = 25  # Higher for double jump
+jump_height = 25
 gravity = 1
 jump_velocity = 0
-fall_speed = 15  
+fall_speed = 15
+ground_level = SCREEN_HEIGHT - player_height
+double_jump = False
 
-ground_level = SCREEN_HEIGHT - player_height  
+# Shark settings
+shark_count = 3  # Maximum sharks on screen
+sharks = []
 
-background_x = 0 
-background_y = 0
+for _ in range(shark_count):
+    direction = random.choice(['left', 'right'])  # Randomly choose direction
+    if direction == 'left':
+        x = SCREEN_WIDTH + random.randint(50, 200)
+    else:
+        x = -200  # Start off-screen to the left
+    y = random.randint(100, SCREEN_HEIGHT - 200)
+    sharks.append({
+        'rect': pygame.Rect(x, y, 200, 120),
+        'frame': 0,
+        'frame_count': 0,
+        'speed': random.uniform(1.5, 3),
+        'direction': direction
+    })
 
-platform_speed = 2  
-platforms = [
-    pygame.Rect(100, 500, 200, 20),
-    pygame.Rect(400, 400, 200, 20),
-    pygame.Rect(700, 300, 200, 20),
-    pygame.Rect(1000, 200, 200, 20),
-]
+# Function to generate a random bubble
+def generate_bubble():
+    bubble_x = random.randint(50, SCREEN_WIDTH - 110)  # Adjusted for bubble size
+    bubble_y = random.randint(100, SCREEN_HEIGHT - 300)
+    return pygame.Rect(bubble_x, bubble_y, 60, 60)
 
-def generate_coins():
-    coins = []
-    for platform in platforms:
-        num_coins = random.randint(1, 2) 
-        for _ in range(num_coins):
-            coin_x = platform.x + random.randint(10, platform.width - 70) 
-            coin_y = platform.y - 60  
-            coins.append({'rect': pygame.Rect(coin_x, coin_y, 60, 60), 'platform': platform})
-    return coins
-
-coins = generate_coins()
-total_stones = 30 
-
-# Spike settings
-spikes = [
-    pygame.Rect(400, 580, 80, 80), 
-    pygame.Rect(700, 480, 80, 80),  
-]
+# Generate initial bubbles
+bubbles = [generate_bubble() for _ in range(5)]
+total_bubbles = 30
+bubble_collected = 0
 
 lives = 3
-spike_hits = 0 
-
-collected_stones = 0
-
-jump_time = 0
-double_jump_time_window = 0.3  
+game_over = False
 
 # Main game loop
 running = True
-game_over = False
 while running:
-    current_time = time.time() 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -113,105 +103,76 @@ while running:
             if not player_jump:  # First jump
                 player_jump = True
                 jump_velocity = jump_height
-                jump_time = current_time  
-            elif current_time - jump_time <= double_jump_time_window: 
+            elif not double_jump:  # Double jump
                 player_jump = True
-                jump_velocity = double_jump_height  
-                jump_time = 0 
+                jump_velocity = jump_height
+                double_jump = True  # Prevent further jumps until reset
 
-      
         if player_jump:
-            player_y -= jump_velocity 
-            jump_velocity -= gravity  
-            if jump_velocity < -jump_height:  
+            player_y -= jump_velocity
+            jump_velocity -= gravity
+            if jump_velocity < -jump_height:
                 player_jump = False
+                double_jump = False  # Reset double jump when reaching ground
         else:
-            # Apply gravity when the player is not jumping
             player_y += fall_speed
 
-        # Boundary checks to keep the player on the screen
-        if player_x < 0:
-            player_x = 0
-        elif player_x > SCREEN_WIDTH - player_width:  
-            player_x = SCREEN_WIDTH - player_width
-        if player_y > ground_level:  
+        # Boundary checks
+        player_x = max(0, min(player_x, SCREEN_WIDTH - player_width))
+        if player_y > ground_level:
             player_y = ground_level
             player_jump = False
+            double_jump = False  # Reset double jump when hitting the ground
 
-        # Move platforms, coins, and spikes together to the left and reset when they go off screen
-        for platform in platforms:
-            platform.x -= platform_speed 
-            if platform.right < 0: 
-                platform.x = SCREEN_WIDTH 
-                
-                coins = [coin for coin in coins if coin['platform'] != platform]  # Remove old coins
-                num_new_coins = random.randint(1, 2)  # Random number of new coins
-                for _ in range(num_new_coins):
-                    coin_x = platform.x + random.randint(10, platform.width - 70)
-                    coin_y = platform.y - 60
-                    coins.append({'rect': pygame.Rect(coin_x, coin_y, 60, 60), 'platform': platform})
+        # Move sharks and animate
+        for shark in sharks:
+            if shark['direction'] == 'left':
+                shark['rect'].x -= shark['speed']
+                if shark['rect'].right < 0:  # If shark goes off-screen
+                    shark['rect'].x = SCREEN_WIDTH + random.randint(50, 200)
+                    shark['rect'].y = random.randint(100, SCREEN_HEIGHT - 200)
+            else:
+                shark['rect'].x += shark['speed']
+                if shark['rect'].left > SCREEN_WIDTH:  # If shark goes off-screen
+                    shark['rect'].x = -200  # Start off-screen to the left
+                    shark['rect'].y = random.randint(100, SCREEN_HEIGHT - 200)
 
-        for coin in coins[:]:
-            
-            coin['rect'].x = coin['platform'].x + 50
-            coin['rect'].y = coin['platform'].y - 60 
+            # Update frame for animation
+            shark['frame_count'] += 1
+            if shark['frame_count'] >= 8:  # Change frame every 8 ticks
+                shark['frame'] = (shark['frame'] + 1) % (len(left_shark_sprites) if shark['direction'] == 'left' else len(right_shark_sprites))
+                shark['frame_count'] = 0
 
-        for spike in spikes:
-            spike.x -= platform_speed  # Move spikes with platforms
-            if spike.right < 0:
-                spike.x = SCREEN_WIDTH  # Reset spike position
+        # Check if player collects bubbles
+        player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+        for bubble in bubbles[:]:
+            if player_rect.colliderect(bubble):
+                bubbles.remove(bubble)
+                bubble_collected += 1
+                # Spawn a new bubble
+                bubbles.append(generate_bubble())
 
-        
-        player_rect = pygame.Rect(player_x, player_y, player_width, player_height)  
-        on_platform = False 
-        for platform in platforms:
-            if player_rect.colliderect(platform) and player_y + player_height <= platform.y + fall_speed:
-                player_y = platform.y - player_height  # Adjust for player size
-                on_platform = True
-                jump_velocity = 0 
-
-        # Collision detection with coins
-        for coin in coins[:]:
-            if player_rect.colliderect(coin['rect']):
-                coins.remove(coin)
-                collected_stones += 1  
-                if collected_stones >= total_stones:
-                    
-                    pass
-
-        # Collision detection with spikes
-        for spike in spikes:
-            if player_rect.colliderect(spike):
-                spike_hits += 1
-                if spike_hits == 1:
-                    lives -= 1
-                    player_x = SCREEN_WIDTH // 2
-                    player_y = SCREEN_HEIGHT - 150  # Reset player position
-                elif spike_hits == 2:
-                    lives -= 1
-                    player_x = SCREEN_WIDTH // 2
-                    player_y = SCREEN_HEIGHT - 150  # Reset player position
-                elif spike_hits >= 3:
+        # Shark collision and game over check
+        for shark in sharks:
+            if player_rect.colliderect(shark['rect']):
+                lives -= 1
+                if lives == 0:
                     game_over = True
-                break  
 
     # Drawing
     screen.fill(WHITE)
+    screen.blit(background_image, (0, 0))
 
-    # Draw the background (static)
-    screen.blit(background_image, (background_x, background_y))
+    # Draw sharks
+    for shark in sharks:
+        if shark['direction'] == 'left':
+            screen.blit(left_shark_sprites[shark['frame']], (shark['rect'].x, shark['rect'].y))
+        else:
+            screen.blit(right_shark_sprites[shark['frame']], (shark['rect'].x, shark['rect'].y))
 
-    # Draw platforms
-    for platform in platforms:
-        screen.blit(platform_image, (platform.x, platform.y))
-
-    # Draw coins
-    for coin in coins:
-        screen.blit(coin_image, (coin['rect'].x, coin['rect'].y))
-
-    # Draw spikes
-    for spike in spikes:
-        screen.blit(spike_image, (spike.x, spike.y))
+    # Draw bubbles
+    for bubble in bubbles:
+        screen.blit(bubble_image, (bubble.x, bubble.y))
 
     # Draw player
     screen.blit(player_image, (player_x, player_y))
@@ -220,21 +181,20 @@ while running:
     for i in range(lives):
         screen.blit(heart_image, (10 + i * 50, 10))
 
-    # Draw collected stones text at the top right corner
+    # Draw collected bubbles text
     font = pygame.font.Font(None, 36)
-    stones_text = font.render(f'Stones Collected: {collected_stones}/{total_stones}', True, WHITE)
-    text_rect = stones_text.get_rect()
-    text_rect.topright = (SCREEN_WIDTH - 10, 10)  # Position text at the top right corner
-    screen.blit(stones_text, text_rect)
+    bubble_text = font.render(f'Oxygen Bubbles Collected: {bubble_collected}/{total_bubbles}', True, WHITE)
+    screen.blit(bubble_text, (SCREEN_WIDTH - 400, 10))
 
+    # Game over screen
     if game_over:
         font = pygame.font.Font(None, 72)
         game_over_text = font.render('Game Over', True, RED)
         screen.blit(game_over_text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2 - 50))
         pygame.display.flip()
-        pygame.time.wait(2000)  # Wait for 2 seconds before quitting
+        pygame.time.wait(2000)
         pygame.quit()
         sys.exit()
 
     pygame.display.flip()
-    clock.tick(60)  # Frame rate
+    clock.tick(60)
