@@ -1,0 +1,149 @@
+import pygame
+
+# Initialize pygame
+pygame.init()
+
+# Screen dimensions
+width = 1200
+height = 750
+screen = pygame.display.set_mode((width, height))
+
+# Set title
+pygame.display.set_caption("Environmental Game")
+
+# Load background image
+background = pygame.image.load('bg.jpg')
+background = pygame.transform.scale(background, (width, height))
+
+# Load hero walking images (animation frames)
+# You only have one image for right and left, so avoid frame cycling for them.
+hero_walk_right = [
+    pygame.transform.scale(pygame.image.load('r1.png'), (100, 150)),
+]
+
+hero_walk_left = [
+    pygame.transform.scale(pygame.image.load('l1.png'), (100, 150)),
+]
+
+# Ensure there are multiple frames for up and down directions
+hero_walk_up = [
+    pygame.transform.scale(pygame.image.load('u1.png'), (100, 150)),
+    pygame.transform.scale(pygame.image.load('u2.png'), (100, 150)),
+    pygame.transform.scale(pygame.image.load('u3.png'), (100, 150)),
+]
+
+hero_walk_down = [
+    pygame.transform.scale(pygame.image.load('d1.png'), (100, 150)),
+    pygame.transform.scale(pygame.image.load('d2.png'), (100, 150)),
+    pygame.transform.scale(pygame.image.load('d3.png'), (100, 150)),
+]
+
+# Idle image when not moving
+hero_idle = pygame.transform.scale(pygame.image.load('d1.png'), (100, 150))
+
+# Load human image
+human_image = pygame.transform.scale(pygame.image.load('human.png'), (100, 150))
+
+# Define font
+font = pygame.font.Font(None, 36)
+
+# Hero settings
+hero = pygame.Rect(100, 100, 50, 50)
+hero_speed = 10
+hero_frame = 0  # To track animation frames
+hero_direction = 'idle'  # To track the current direction
+
+# Human settings
+human = pygame.Rect(400, 300, 50, 50)
+human_dialogue = ""
+typing_mode = False
+
+# Animation control
+frame_counter = 0
+animation_speed = 10  # Control how fast to switch between animation frames
+
+# Game loop
+running = True
+clock = pygame.time.Clock()
+
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+        # Handle typing dialogue when meeting another human
+        if typing_mode:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    typing_mode = False  # Exit typing mode
+                elif event.key == pygame.K_BACKSPACE:
+                    human_dialogue = human_dialogue[:-1]  # Remove last character
+                else:
+                    human_dialogue += event.unicode  # Add new character to dialogue
+
+    # Hero movement and animation
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT]:
+        hero.x -= hero_speed
+        hero_direction = 'left'
+    elif keys[pygame.K_RIGHT]:
+        hero.x += hero_speed
+        hero_direction = 'right'
+    elif keys[pygame.K_UP]:
+        hero.y -= hero_speed
+        hero_direction = 'up'
+    elif keys[pygame.K_DOWN]:
+        hero.y += hero_speed
+        hero_direction = 'down'
+    else:
+        hero_direction = 'idle'
+
+    # Control animation speed and cycling
+    frame_counter += 1
+    if frame_counter >= animation_speed:
+        frame_counter = 0
+        if hero_direction == 'right' and len(hero_walk_right) > 1:
+            hero_frame = (hero_frame + 1) % len(hero_walk_right)  # Cycle through right walk images
+        elif hero_direction == 'left' and len(hero_walk_left) > 1:
+            hero_frame = (hero_frame + 1) % len(hero_walk_left)  # Cycle through left walk images
+        elif hero_direction == 'up':
+            hero_frame = (hero_frame + 1) % len(hero_walk_up)  # Cycle through up walk images
+        elif hero_direction == 'down':
+            hero_frame = (hero_frame + 1) % len(hero_walk_down)  # Cycle through down walk images
+        else:
+            hero_frame = 0  # Reset to idle or first frame for other directions
+
+    # Check for meeting another human
+    if hero.colliderect(human) and not typing_mode:
+        typing_mode = True  # Enter typing mode if hero meets another human
+
+    # Drawing
+    screen.blit(background, (0, 0))  # Draw background image
+    
+    # Draw hero based on direction and animation frame
+    if hero_direction == 'right':
+        screen.blit(hero_walk_right[0], (hero.x, hero.y))  # Only one frame, no cycling
+    elif hero_direction == 'left':
+        screen.blit(hero_walk_left[0], (hero.x, hero.y))  # Only one frame, no cycling
+    elif hero_direction == 'up':
+        screen.blit(hero_walk_up[hero_frame], (hero.x, hero.y))
+    elif hero_direction == 'down':
+        screen.blit(hero_walk_down[hero_frame], (hero.x, hero.y))
+    else:
+        screen.blit(hero_idle, (hero.x, hero.y))  # Default idle state when not moving
+
+    # Draw human
+    screen.blit(human_image, (human.x, human.y))
+
+    # Display dialogue if typing mode is active
+    if typing_mode:
+        text_surface = font.render(human_dialogue, True, (0, 0, 0))
+        screen.blit(text_surface, (hero.x, hero.y - 30))  # Display dialogue above hero
+
+    # Update display
+    pygame.display.flip()
+    
+    # Frame rate
+    clock.tick(30)
+
+pygame.quit()
