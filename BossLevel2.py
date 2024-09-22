@@ -29,21 +29,21 @@ sun_img = pygame.transform.scale(sun, (PLAYER_WIDTH, PLAYER_HEIGHT))
 white_tiger = pygame.image.load("white_tiger.png").convert_alpha()
 white_tiger_img = pygame.transform.scale(white_tiger, (PLAYER_WIDTH, PLAYER_HEIGHT))
 
-air_img = pygame.image.load("air_atk.png").convert_alpha()
-air_spell = pygame.transform.scale(air_img, (200, 200))
+blackmyth_spell_frames = [pygame.image.load(f"blackmyth_spell_frame_{i}.png").convert_alpha() for i in range(1, 10)]
+current_blackmyth_frame = 0
+frame_delay = 2  
+frame_count = 0
 
-sun_black_spell_img = pygame.image.load("sun_black_spell.png").convert_alpha()
-sun_black_spell = pygame.transform.scale(sun_black_spell_img, (200, 200))
+wind_spell_frames = [pygame.image.load(f"wind_spell_frame_{i}.png").convert_alpha() for i in range(1, 9)]
+current_wind_frame = 0
 
-#fire_spell_frame = [pygame.image.load(f"fire_spell_frame_{i}.png").convert_alpha() for i in range(1, 9)]
-#current_fire_frame = 0
-#frame_delay = 1
-#frame_count = 0
+wind_explosive_frames = [pygame.image.load(f"wind_explosive_frame_{i}.png").convert_alpha() for i in range(1, 11)]
+blackmyth_explosive_frames = [pygame.image.load(f"blackmyth_explosive_frame_{i}.png").convert_alpha() for i in range(1, 9)]
 
-wind_explosive_frames = [pygame.image.load(f"wind_explosive_frame_{i}.png").convert_alpha() for i in range(1, 3)]
-wind_explosive_active = False
-wind_explosive_pos = None
-wind_explosive_frame = 0
+explosive_active = False
+explosive_pos = None
+explosive_frame = 0
+explosion_type = None 
 
 def draw_IMG():
     
@@ -51,29 +51,45 @@ def draw_IMG():
     WINDOW.blit(BL_img, (400, 0))
 
 def draw(sun, white_tiger, sun_health_rect, white_tiger_health_rect, spells):
-    global current_fire_frame, frame_count, wind_explosive_active, wind_explosive_frame
+    global current_blackmyth_frame, current_wind_frame, frame_count, explosive_active, explosive_frame, explosion_type
 
     WINDOW.blit(sun_img, (sun.x, sun.y))
     WINDOW.blit(white_tiger_img, (white_tiger.x, white_tiger.y))
 
     for spell in spells:
-        if spell["type"] == "sun_black_spell":
-            WINDOW.blit(sun_black_spell, (spell["rect"].x, spell["rect"].y))
-        elif spell["type"] == "air":
-            WINDOW.blit(air_spell, (spell["rect"].x, spell["rect"].y))
+        if spell["type"] == "blackmyth_spell":
+            frame_count += 1
+            if frame_count >= frame_delay:
+                frame_count = 0
+                current_blackmyth_frame = (current_blackmyth_frame + 1) % len(blackmyth_spell_frames)
+            WINDOW.blit(blackmyth_spell_frames[current_blackmyth_frame], (spell["rect"].x, spell["rect"].y))
 
-        if wind_explosive_active and wind_explosive_pos:
-            WINDOW.blit(wind_explosive_frames[wind_explosive_frame], wind_explosive_pos)
-            wind_explosive_frame += 1
-            if wind_explosive_frame >= len(wind_explosive_frames):
-                wind_explosive_active = False
-                wind_explosive_frame = 0   
+        elif spell["type"] == "wind":
+            frame_count += 1
+            if frame_count >= frame_delay:
+                frame_count = 0
+                current_wind_frame = (current_wind_frame + 1) % len(wind_spell_frames)
+            WINDOW.blit(wind_spell_frames[current_wind_frame], (spell["rect"].x, spell["rect"].y))
+
+    if explosive_active and explosive_pos:
+        if explosion_type == "wind":
+            WINDOW.blit(wind_explosive_frames[explosive_frame], explosive_pos)
+        elif explosion_type == "blackmyth_spell":
+            WINDOW.blit(blackmyth_explosive_frames[explosive_frame], explosive_pos)
+
+        explosive_frame += 1
+        if explosion_type == "wind" and explosive_frame >= len(wind_explosive_frames):
+            explosive_active = False
+            explosive_frame = 0
+        elif explosion_type == "blackmyth_spell" and explosive_frame >= len(blackmyth_explosive_frames):
+            explosive_active = False
+            explosive_frame = 0   
 
     pygame.draw.rect(WINDOW, "green", sun_health_rect)
     pygame.draw.rect(WINDOW, "red", white_tiger_health_rect)
 
 def main():
-    global wind_explosive_active, wind_explosive_pos
+    global explosive_active, explosive_pos, explosion_type
 
     run = True
 
@@ -85,8 +101,8 @@ def main():
     white_tiger_health_rect = pygame.Rect(WIDTH - 300 - 10, 10, 300, 40)
 
     spells = []
-    last_sun_black_spell_spell_time = pygame.time.get_ticks()
-    last_air_spell_time = pygame.time.get_ticks() 
+    last_blackmyth_spell_time = pygame.time.get_ticks()
+    last_wind_spell_time = pygame.time.get_ticks() 
 
     while run:
         current_time = pygame.time.get_ticks()
@@ -102,42 +118,46 @@ def main():
         if keys[pygame.K_RIGHT] and sun.x + PLAYER_VEL + sun.width <= WIDTH:
             sun.x += PLAYER_VEL
 
-        if keys[pygame.K_SPACE] and current_time - last_sun_black_spell_spell_time > 500:
-            sun_black_spell_spell_rect = pygame.Rect(sun.x + sun.width, sun.y + sun.height // 2 - 50, 100, 100)
-            spells.append({"type": "sun_black_spell", "rect": sun_black_spell_spell_rect})
-            last_sun_black_spell_spell_time = current_time
+        if keys[pygame.K_SPACE] and current_time - last_blackmyth_spell_time > 500:
+            blackmyth_spell_rect = pygame.Rect(sun.x + sun.width, sun.y + sun.height // 2 - 150, 100, 100)
+            spells.append({"type": "blackmyth_spell", "rect": blackmyth_spell_rect})
+            last_blackmyth_spell_time = current_time
 
-        if current_time - last_air_spell_time >= 3000:
-            air_spell_rect = pygame.Rect(white_tiger.x, white_tiger.y + white_tiger.height // 2 - 50, 100, 100)
-            spells.append({"type": "air", "rect": air_spell_rect})
-            last_air_spell_time = current_time
+        if current_time - last_wind_spell_time >= 3000:
+            wind_spell_rect = pygame.Rect(white_tiger.x, white_tiger.y + white_tiger.height // 2 - 50, 100, 100)
+            spells.append({"type": "wind", "rect": wind_spell_rect})
+            last_wind_spell_time = current_time
 
         for spell in spells[:]:
-            if spell["type"] == "sun_black_spell":
+            if spell["type"] == "blackmyth_spell":
                 spell["rect"].x += SPELL_VEL
                 if spell["rect"].colliderect(white_tiger):
                     white_tiger_health -= 10
                     white_tiger_health_rect.width = white_tiger_health * 3
                     spells.remove(spell)
+                    explosive_active = True
+                    explosive_pos = (white_tiger.x, white_tiger.y)
+                    explosion_type = "blackmyth_spell"
                 elif spell["rect"].x > WIDTH:
                     spells.remove(spell)
 
-            elif spell["type"] == "air":
+            elif spell["type"] == "wind":
                 spell["rect"].x -= SPELL_VEL
                 if spell["rect"].colliderect(sun):
                     sun_health -= 10
                     sun_health_rect.width = sun_health * 3
                     spells.remove(spell)
-                    wind_explosive_active = True
-                    wind_explosive_pos = (sun.x, sun.y)
+                    explosive_active = True
+                    explosive_pos = (sun.x, sun.y)
+                    explosion_type = "wind"
                 elif spell["rect"].x < 0:
                     spells.remove(spell)
 
         for spell in spells[:]:
             for other_spell in spells[:]:
                 if spell != other_spell and spell["rect"].colliderect(other_spell["rect"]):
-                    if (spell["type"] == "sun_black_spell" and other_spell["type"] == "air") or \
-                            (spell["type"] == "air" and other_spell["type"] == "sun_black_spell"):
+                    if (spell["type"] == "blackmyth_spell" and other_spell["type"] == "wind") or \
+                            (spell["type"] == "wind" and other_spell["type"] == "blackmyth_spell"):
                         spells.remove(spell)
                         spells.remove(other_spell)
 
