@@ -25,9 +25,9 @@ WHITE = (255, 255, 255)
 clock = pygame.time.Clock()
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Platformer Game")
+pygame.display.set_caption("Air Game")
 
-BG = pygame.image.load("air background.png").convert_alpha()
+BG = pygame.image.load("air_background.png").convert_alpha()
 BG_img = pygame.transform.scale(BG, (WIDTH, HEIGHT))
 
 player_image = pygame.image.load('sun_moving.png').convert_alpha()
@@ -39,8 +39,17 @@ fire_mini_image = pygame.transform.scale(fire_mini_image, (50, 50))
 zhu_bajie_image = pygame.image.load('zhu_bajie.png').convert_alpha()
 zhu_bajie_image = pygame.transform.scale(zhu_bajie_image, (80, 100)) 
 
-lava_image = pygame.image.load('air tile.png').convert_alpha()
-lava_image = pygame.transform.scale(lava_image, (200, 50)) 
+# Load lava image
+lava_image = pygame.image.load('air_portal.png').convert_alpha()
+lava_image = pygame.transform.scale(lava_image, (200, 50))  # Adjust size as needed
+
+# Load life icon image
+life_icon_image = pygame.image.load('air_health.png').convert_alpha()
+life_icon_image = pygame.transform.scale(life_icon_image, (30, 30))  # Adjust size as needed
+
+# Load cloud image
+cloud_image = pygame.image.load('cloud.png').convert_alpha()
+cloud_image = pygame.transform.scale(cloud_image, (100, 60))  # Adjust size as needed
 
 GRAVITY = 1
 jump_force = 15
@@ -53,6 +62,9 @@ fire_minis = []
 enemy_shooting_interval = 2000  # 2 seconds between shots
 enemy_last_shot_time = 0
 
+# Initialize player lives
+lives = 2
+
 class Platform:
     def __init__(self, x, y, width, height):
         self.rect = pygame.Rect(x, y, width, height)
@@ -60,13 +72,24 @@ class Platform:
     def draw(self):
         screen.blit(lava_image, (self.rect.x, self.rect.y))  # Draw lava image instead of rectangle
 
-# Updated platform positions to change tile placing
-platforms = [
-    Platform(50, HEIGHT - 150, 150, 10),   # Lower platform, left side
-    Platform(300, HEIGHT - 250, 250, 10),  # Middle platform
-    Platform(600, HEIGHT - 180, 200, 10),  # Higher platform, right side
-    Platform(800, HEIGHT - 350, 180, 10),  # Higher platform for Zhu Bajie
-]
+class Cloud:
+    def __init__(self, x, y):
+        self.rect = pygame.Rect(x, y, 100, 60)  # Size of the cloud
+        self.visible = True
+        self.disappear_time = 0
+
+    def draw(self):
+        if self.visible:
+            screen.blit(cloud_image, (self.rect.x, self.rect.y))
+
+    def check_collision(self, player_rect):
+        if self.visible and self.rect.colliderect(player_rect):
+            self.visible = False
+            self.disappear_time = pygame.time.get_ticks()  # Start timer for disappearance
+
+    def update(self):
+        if not self.visible and pygame.time.get_ticks() - self.disappear_time > 2000:
+            self.visible = True  # Reset visibility after 2 seconds
 
 dialogue_timer = 0 
 def display_dialogue(text, position):
@@ -74,13 +97,17 @@ def display_dialogue(text, position):
     dialogue_surface = font.render(text, True, BLACK)
     screen.blit(dialogue_surface, position)
 
+def display_lives(lives):
+    for i in range(lives):
+        screen.blit(life_icon_image, (10 + i * 40, 10))  # Adjust the position as needed
+
+# Create clouds
+clouds = [Cloud(random.randint(100, WIDTH - 200), random.randint(50, HEIGHT - 150)) for _ in range(3)]
+
 running = True
 in_dialogue = False  # Flag for Zhu Bajie interaction
 dialogue_stage = 0   # Stage of dialogue (0: Sun speaks, 1: Zhu Bajie responds)
 stop_fire_minis = False  # Flag to stop fire minis when Sun and Zhu Bajie meet
-
-zhu_bajie_x = 800
-zhu_bajie_y = HEIGHT - 350 - player_height
 
 dialogues = [
     ("Sun: We must hurry to the next stage!", "Zhu Bajie: Yes, let's go quickly!"),
@@ -134,6 +161,12 @@ while running:
     for platform in platforms:
         platform.draw()
 
+    # Cloud interaction
+    for cloud in clouds:
+        cloud.check_collision(player_rect)
+        cloud.update()
+        cloud.draw()
+
     # Enemy shooting logic (from right-hand side)
     current_time = pygame.time.get_ticks()
     if not stop_fire_minis:  # Only allow fire minis if not in dialogue
@@ -151,7 +184,11 @@ while running:
     for fire_mini in fire_minis[:]:
         if player_rect.colliderect(fire_mini):
             fire_minis.remove(fire_mini)  # Remove fire mini upon collision
-            print("Player hit by fire mini!")  # For debugging purposes
+            lives -= 1  # Reduce lives
+            print("Player hit by Fire mini!")  # For debugging purposes
+            if lives <= 0:
+                print("Game Over!")  # End the game if no lives left
+                running = False
 
     # Draw fire mini (enemy bullets) using the image
     if not stop_fire_minis:
@@ -159,8 +196,10 @@ while running:
             screen.blit(fire_mini_image, (fire_mini.x, fire_mini.y))
 
     screen.blit(player_image, (player_x, player_y))
-
     screen.blit(zhu_bajie_image, (zhu_bajie_x, zhu_bajie_y))
+
+    # Display the number of lives
+    display_lives(lives)
 
     # Check if player meets Zhu Bajie for interaction
     zhu_bajie_rect = pygame.Rect(zhu_bajie_x, zhu_bajie_y, 50, 75)
@@ -183,7 +222,6 @@ while running:
         in_dialogue = False  # Clear dialogue after 2 seconds
 
     pygame.display.flip()
-
     clock.tick(60)
 
 pygame.quit()

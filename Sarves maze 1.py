@@ -25,7 +25,7 @@ WHITE = (255, 255, 255)
 clock = pygame.time.Clock()
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Platformer Game")
+pygame.display.set_caption("Air Game")
 
 BG = pygame.image.load("air background.png").convert_alpha()
 BG_img = pygame.transform.scale(BG, (WIDTH, HEIGHT))
@@ -39,8 +39,12 @@ fire_mini_image = pygame.transform.scale(fire_mini_image, (50, 50))
 zhu_bajie_image = pygame.image.load('zhu_bajie.png').convert_alpha()
 zhu_bajie_image = pygame.transform.scale(zhu_bajie_image, (80, 100)) 
 
-lava_image = pygame.image.load('air tile.png').convert_alpha()
+lava_image = pygame.image.load('air portal.png').convert_alpha()
 lava_image = pygame.transform.scale(lava_image, (200, 50)) 
+
+# Load life icon image
+life_icon_image = pygame.image.load('air health.png').convert_alpha()
+life_icon_image = pygame.transform.scale(life_icon_image, (30, 30))  # Adjust size as needed
 
 GRAVITY = 1
 jump_force = 15
@@ -52,6 +56,9 @@ bullet_speed = 10
 fire_minis = []
 enemy_shooting_interval = 2000  # 2 seconds between shots
 enemy_last_shot_time = 0
+
+# Initialize player lives
+lives = 2
 
 class Platform:
     def __init__(self, x, y, width, height):
@@ -73,6 +80,10 @@ def display_dialogue(text, position):
     font = pygame.font.SysFont(None, 30)
     dialogue_surface = font.render(text, True, BLACK)
     screen.blit(dialogue_surface, position)
+
+def display_lives(lives):
+    for i in range(lives):
+        screen.blit(life_icon_image, (10 + i * 40, 10))  # Adjust the position as needed
 
 running = True
 in_dialogue = False  # Flag for Zhu Bajie interaction
@@ -151,7 +162,11 @@ while running:
     for fire_mini in fire_minis[:]:
         if player_rect.colliderect(fire_mini):
             fire_minis.remove(fire_mini)  # Remove fire mini upon collision
-            print("Player hit by fire mini!")  # For debugging purposes
+            lives -= 1  # Reduce lives
+            print("Player hit by Air mini!")  # For debugging purposes
+            if lives <= 0:
+                print("Game Over!")  # End the game if no lives left
+                running = False
 
     # Draw fire mini (enemy bullets) using the image
     if not stop_fire_minis:
@@ -161,6 +176,9 @@ while running:
     screen.blit(player_image, (player_x, player_y))
 
     screen.blit(zhu_bajie_image, (zhu_bajie_x, zhu_bajie_y))
+
+    # Display the number of lives
+    display_lives(lives)
 
     # Check if player meets Zhu Bajie for interaction
     zhu_bajie_rect = pygame.Rect(zhu_bajie_x, zhu_bajie_y, 50, 75)

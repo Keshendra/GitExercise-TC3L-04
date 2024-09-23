@@ -34,7 +34,7 @@ WHITE = (255, 255, 255)
 clock = pygame.time.Clock()
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Platformer Game")
+pygame.display.set_caption("Fire Game")
 
 BG = pygame.image.load("fire_1bg.jpg").convert_alpha()
 BG_img = pygame.transform.scale(BG, (WIDTH, HEIGHT))
