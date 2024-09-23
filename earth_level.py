@@ -53,7 +53,7 @@ platforms = [
     pygame.Rect(1000, 200, 200, 20),
 ]
 
-# stone settings (Attach random number of stones to platforms)
+# Stone settings (Attach random number of stones to platforms)
 def generate_stones():
     stones = []
     for platform in platforms:
@@ -119,6 +119,12 @@ while running:
             player_y = ground_level
             player_jump = False
             jump_velocity = 0
+
+        # Boundary checks for left and right movement
+        if player_x < 0:
+            player_x = 0
+        elif player_x > SCREEN_WIDTH - player_width:
+            player_x = SCREEN_WIDTH - player_width
 
         # Move platforms and stones together to the left and reset when they go off screen
         for platform in platforms:
@@ -201,3 +207,5 @@ while running:
 
     pygame.display.flip()
     clock.tick(60)
+
+pygame.quit()
