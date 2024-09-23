@@ -4,17 +4,9 @@ import random
 # Initialize Pygame
 pygame.init()
 
-# Initialize the mixer for playing sounds
-pygame.mixer.init()
-
-# Load background music
-pygame.mixer.music.load('fire music.mp3')  # Make sure to have this file
-pygame.mixer.music.set_volume(0.5)  # Set volume (0.0 to 1.0)
-pygame.mixer.music.play(-1)  # Play the music in a loop
-
 # Screen dimensions
-WIDTH = 1200
-HEIGHT = 780
+WIDTH = 1000
+HEIGHT = 500
 
 player_width = 80
 player_height = 100
@@ -23,9 +15,8 @@ player_y = HEIGHT - player_height - 10
 player_speed = 5
 player_y_velocity = 0
 
-# Move Zhu Bajie to the top right
-zhu_bajie_x = WIDTH - 150  # Adjusted for position
-zhu_bajie_y = 50  # Adjusted height for the top right
+zhu_bajie_x = 750
+zhu_bajie_y = HEIGHT - 400 - player_height
 
 # Colors
 BLACK = (0, 0, 0)
@@ -36,24 +27,20 @@ clock = pygame.time.Clock()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Platformer Game")
 
-BG = pygame.image.load("fire_1bg.jpg").convert_alpha()
+BG = pygame.image.load("air background.png").convert_alpha()
 BG_img = pygame.transform.scale(BG, (WIDTH, HEIGHT))
 
 player_image = pygame.image.load('sun_moving.png').convert_alpha()
 player_image = pygame.transform.scale(player_image, (player_width, player_height))
 
-fire_mini_image = pygame.image.load('fire_mini.png').convert_alpha()
+fire_mini_image = pygame.image.load('air_mini.png').convert_alpha()
 fire_mini_image = pygame.transform.scale(fire_mini_image, (50, 50))
 
 zhu_bajie_image = pygame.image.load('zhu_bajie.png').convert_alpha()
 zhu_bajie_image = pygame.transform.scale(zhu_bajie_image, (80, 100)) 
 
-lava_image = pygame.image.load('lava.png').convert_alpha()
+lava_image = pygame.image.load('air tile.png').convert_alpha()
 lava_image = pygame.transform.scale(lava_image, (200, 50)) 
-
-# Load life icon image
-life_image = pygame.image.load('fire health.png').convert_alpha()
-life_image = pygame.transform.scale(life_image, (30, 30))  # Adjust size as needed
 
 GRAVITY = 1
 jump_force = 15
@@ -61,42 +48,24 @@ can_double_jump = False
 
 bullet_width = 20
 bullet_height = 10
-bullet_speed = 5
+bullet_speed = 10
 fire_minis = []
-enemy_shooting_interval = 1000  # Spawn fire mini every 1 second
+enemy_shooting_interval = 2000  # 2 seconds between shots
 enemy_last_shot_time = 0
 
-game_over = False  # Flag to check if the game is over
-lives = 3  # Set initial lives
-
 class Platform:
-    def __init__(self, x, y, width, height, speed=2):
+    def __init__(self, x, y, width, height):
         self.rect = pygame.Rect(x, y, width, height)
-        self.speed = speed  # Speed of horizontal movement
-        self.direction = 1  # 1 for right, -1 for left
-
-    def move(self):
-        # Move platform horizontally
-        self.rect.x += self.speed * self.direction
-
-        # Reverse direction if the platform hits the edge of the screen or moves too far
-        if self.rect.x <= 0 or self.rect.x + self.rect.width >= WIDTH:
-            self.direction *= -1
 
     def draw(self):
         screen.blit(lava_image, (self.rect.x, self.rect.y))  # Draw lava image instead of rectangle
 
-# Platforms with horizontal movement
+# Updated platform positions to change tile placing
 platforms = [
-    Platform(100, HEIGHT - 100, 200, 10, speed=2),
-    Platform(400, HEIGHT - 200, 200, 10, speed=3),
-    Platform(600, HEIGHT - 300, 200, 10, speed=2),
-    Platform(750, HEIGHT - 400, 200, 10, speed=4),  # Platform with Zhu Bajie moves faster
-    Platform(300, HEIGHT - 500, 200, 10, speed=1),  # New platform 1
-    Platform(500, HEIGHT - 600, 200, 10, speed=3),  # New platform 2
-    Platform(900, HEIGHT - 700, 200, 10, speed=2),  # New platform 3
-    # Add a non-movable platform for Zhu Bajie
-    Platform(WIDTH - 200, zhu_bajie_y + 80, 150, 10, speed=0),  # Non-movable platform under Zhu Bajie
+    Platform(50, HEIGHT - 150, 150, 10),   # Lower platform, left side
+    Platform(300, HEIGHT - 250, 250, 10),  # Middle platform
+    Platform(600, HEIGHT - 180, 200, 10),  # Higher platform, right side
+    Platform(800, HEIGHT - 350, 180, 10),  # Higher platform for Zhu Bajie
 ]
 
 dialogue_timer = 0 
@@ -105,14 +74,13 @@ def display_dialogue(text, position):
     dialogue_surface = font.render(text, True, BLACK)
     screen.blit(dialogue_surface, position)
 
-def display_lives():
-    for i in range(lives):
-        screen.blit(life_image, (10 + i * 35, 10))  # Display lives at the top-left corner
-
 running = True
 in_dialogue = False  # Flag for Zhu Bajie interaction
 dialogue_stage = 0   # Stage of dialogue (0: Sun speaks, 1: Zhu Bajie responds)
 stop_fire_minis = False  # Flag to stop fire minis when Sun and Zhu Bajie meet
+
+zhu_bajie_x = 800
+zhu_bajie_y = HEIGHT - 350 - player_height
 
 dialogues = [
     ("Sun: We must hurry to the next stage!", "Zhu Bajie: Yes, let's go quickly!"),
@@ -127,13 +95,6 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
-    if game_over:
-        font = pygame.font.SysFont(None, 74)
-        game_over_surface = font.render("Game Over", True, BLACK)
-        screen.blit(game_over_surface, (WIDTH//2 - 150, HEIGHT//2 - 50))
-        pygame.display.flip()
-        continue  # Skip the rest of the game loop
 
     # Player movement
     keys = pygame.key.get_pressed()
@@ -170,9 +131,7 @@ while running:
         player_y = HEIGHT - player_height
         player_y_velocity = 0
 
-    # Move and draw platforms
     for platform in platforms:
-        platform.move()  # Update platform's position
         platform.draw()
 
     # Enemy shooting logic (from right-hand side)
@@ -180,9 +139,8 @@ while running:
     if not stop_fire_minis:  # Only allow fire minis if not in dialogue
         if current_time - enemy_last_shot_time > enemy_shooting_interval:
             enemy_last_shot_time = current_time
-            for _ in range(2):  # Spawn 2 fire minis at a time (reduced)
-                fire_mini = pygame.Rect(WIDTH, random.randint(100, HEIGHT - bullet_height), bullet_width, bullet_height)
-                fire_minis.append(fire_mini)
+            fire_mini = pygame.Rect(WIDTH, random.randint(100, HEIGHT - bullet_height), bullet_width, bullet_height)
+            fire_minis.append(fire_mini)
 
     # Move enemy bullets (fire mini)
     for fire_mini in fire_minis:
@@ -193,10 +151,7 @@ while running:
     for fire_mini in fire_minis[:]:
         if player_rect.colliderect(fire_mini):
             fire_minis.remove(fire_mini)  # Remove fire mini upon collision
-            lives -= 1  # Decrease lives
-            print("Player hit by fire mini! Lives left:", lives)  # For debugging purposes
-            if lives <= 0:
-                game_over = True  # Trigger game over
+            print("Player hit by fire mini!")  # For debugging purposes
 
     # Draw fire mini (enemy bullets) using the image
     if not stop_fire_minis:
@@ -204,10 +159,8 @@ while running:
             screen.blit(fire_mini_image, (fire_mini.x, fire_mini.y))
 
     screen.blit(player_image, (player_x, player_y))
-    screen.blit(zhu_bajie_image, (zhu_bajie_x, zhu_bajie_y))
 
-    # Display lives
-    display_lives()
+    screen.blit(zhu_bajie_image, (zhu_bajie_x, zhu_bajie_y))
 
     # Check if player meets Zhu Bajie for interaction
     zhu_bajie_rect = pygame.Rect(zhu_bajie_x, zhu_bajie_y, 50, 75)
