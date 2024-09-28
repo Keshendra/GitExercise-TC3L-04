@@ -22,10 +22,10 @@ background_image = pygame.image.load('cs.png')  # Load the background image
 background_image = pygame.transform.scale(background_image, (screen_width, screen_height))  # Scale to fit the screen
 
 stage_images = [
-    pygame.image.load('firestage.png'),  # Load Stage 1 image
-    pygame.image.load('waterstage.png'),  # Load Stage 2 image
-    pygame.image.load('stonestage.png'),  # Load Stage 3 image
-    pygame.image.load('windstage.png')       # Load Stage 4 image
+    pygame.image.load('stonestage.png'),  # Load Stage 1 image
+    pygame.image.load('windstage.png'),  # Load Stage 2 image
+    pygame.image.load('waterstage.png'),  # Load Stage 3 image
+    pygame.image.load('firestage.png')       # Load Stage 4 image
 ]
 
 # Load and scale the padlock image for locked stages
@@ -44,7 +44,7 @@ stage_positions = [
 ]
 
 # Stage names
-stage_names = ["Devils Lair", "Aqua Lair", "Underworld", "SkyVale"]
+stage_names = ["Underworld", "Sky Vale", "Aqua Palace", "Devils Lair"]
 
 # Stage tracker
 current_stage = "start"  # Possible values: "start", 0, 1, 2, 3 (index of stages)
@@ -77,8 +77,8 @@ def draw_stage(image, base_position, name, locked=False, time_offset=0):
     # Draw the stage image at the new floating position
     screen.blit(image, position)
 
-    # Position the stage name below the floating image
-    name_position = (position[0] + 50, position[1] + 210)  # Adjust name position to float with the stage
+    # Title Position 
+    name_position = (position[0] + 30, position[1] + 210)  # Adjust name position to float with the stage
     draw_text(name, name_position)
 
     # If the stage is locked, draw the padlock image
@@ -128,5 +128,4 @@ while True:
     pygame.display.flip()
 
     # Floating Speed
-    animation_time += clock.tick(15)  # TIKTIK 
-    
+    animation_time += clock.tick(15)  # TIKTIK
