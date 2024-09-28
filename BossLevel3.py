@@ -1,11 +1,12 @@
 import pygame
+import Maps
 
 pygame.init()
 
 clock = pygame.time.Clock()
 
-WIDTH = 1000
-HEIGHT = 500
+WIDTH = 1200
+HEIGHT = 600
 BL_WIDTH = 200
 BL_HEIGHT = 100
 PLAYER_WIDTH = 330
@@ -86,7 +87,7 @@ def draw(sun, blue_dragon, sun_health_rect, blue_dragon_health_rect, spells):
     pygame.draw.rect(WINDOW, "green", sun_health_rect)
     pygame.draw.rect(WINDOW, "red", blue_dragon_health_rect)
 
-def main():
+def bosslevel_3_main():
     global explosive_active, explosive_pos, explosion_type
 
     run = True
@@ -165,14 +166,12 @@ def main():
         pygame.display.update()
 
         if sun_health <= 0:
-            print("Game Over! Player has been defeated.")
-            run = False
-        elif blue_dragon_health <= 0:
-            print("Congratulations! You have completed the first level.")  
             run = True
+        elif blue_dragon_health <= 0:
+            run = False
+            Maps.maps_main()
 
         clock.tick(60) 
 
-    pygame.quit()
-
-main()
+if __name__ == "__main__":
+    bosslevel_3_main()
