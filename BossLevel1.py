@@ -1,4 +1,5 @@
 import pygame
+import Maps
 
 pygame.init()
 
@@ -88,7 +89,7 @@ def draw(sun, black_tortoise, sun_health_rect, black_tortoise_health_rect, spell
     pygame.draw.rect(WINDOW, "green", sun_health_rect)
     pygame.draw.rect(WINDOW, "red", black_tortoise_health_rect)
 
-def main():
+def bosslevel_1_main():
     global explosive_active, explosive_pos, explosion_type
 
     run = True
@@ -168,14 +169,12 @@ def main():
         pygame.display.update()
 
         if sun_health <= 0:
-            print("Game Over! Player has been defeated.")
             run = False
         elif black_tortoise_health <= 0:
-            print("Congratulations! You have completed the first level.")
-            run = False
+            run = True
+            Maps.maps_main()
 
         clock.tick(60)
 
-    pygame.quit()
-
-main()
+if __name__ == "__main__":
+    bosslevel_1_main()
