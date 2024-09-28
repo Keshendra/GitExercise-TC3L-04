@@ -1,11 +1,11 @@
 import pygame
-
+    
 pygame.init()
 
 clock = pygame.time.Clock()
 
-WIDTH = 1000
-HEIGHT = 500
+WIDTH = 1200
+HEIGHT = 600
 BL_WIDTH = 200
 BL_HEIGHT = 100
 PLAYER_WIDTH = 330
@@ -96,7 +96,7 @@ def draw(sun, red_bird, sun_health_rect, red_bird_health_rect, spells):
     pygame.draw.rect(WINDOW, "green", sun_health_rect)
     pygame.draw.rect(WINDOW, "red", red_bird_health_rect)
 
-def main():
+def bosslevel_4_main():
     global explosive_active, explosive_pos, explosion_type
 
     run = True
@@ -190,6 +190,7 @@ def main():
 
         clock.tick(60)
 
-    pygame.quit()
+if __name__ == "__main__":
+    bosslevel_4_main()
 
-main()
+    pygame.quit()
