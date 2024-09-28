@@ -1,11 +1,12 @@
 import pygame
+import Maps
 
 pygame.init()
 
 clock = pygame.time.Clock()
 
-WIDTH = 1000
-HEIGHT = 500
+WIDTH = 1200
+HEIGHT = 600
 BL_WIDTH = 200
 BL_HEIGHT = 100
 PLAYER_WIDTH = 330
@@ -34,10 +35,10 @@ current_blackmyth_frame = 0
 frame_delay = 2  
 frame_count = 0
 
-wind_spell_frames = [pygame.image.load(f"wind_spell_frame_{i}.png").convert_alpha() for i in range(1, 9)]
+wind_spell_frames = [pygame.image.load(f"wind_spell_frame_{i}.png").convert_alpha() for i in range(1, 3)]
 current_wind_frame = 0
 
-wind_explosive_frames = [pygame.image.load(f"wind_explosive_frame_{i}.png").convert_alpha() for i in range(1, 11)]
+wind_explosive_frames = [pygame.image.load(f"wind_explosive_frame_{i}.png").convert_alpha() for i in range(1, 15)]
 blackmyth_explosive_frames = [pygame.image.load(f"blackmyth_explosive_frame_{i}.png").convert_alpha() for i in range(1, 9)]
 
 explosive_active = False
@@ -88,7 +89,7 @@ def draw(sun, white_tiger, sun_health_rect, white_tiger_health_rect, spells):
     pygame.draw.rect(WINDOW, "green", sun_health_rect)
     pygame.draw.rect(WINDOW, "red", white_tiger_health_rect)
 
-def main():
+def bosslevel_2_main():
     global explosive_active, explosive_pos, explosion_type
 
     run = True
@@ -124,7 +125,7 @@ def main():
             last_blackmyth_spell_time = current_time
 
         if current_time - last_wind_spell_time >= 3000:
-            wind_spell_rect = pygame.Rect(white_tiger.x, white_tiger.y + white_tiger.height // 2 - 50, 100, 100)
+            wind_spell_rect = pygame.Rect(white_tiger.x, white_tiger.y + white_tiger.height // 2 - 150, 100, 100)
             spells.append({"type": "wind", "rect": wind_spell_rect})
             last_wind_spell_time = current_time
 
@@ -167,14 +168,12 @@ def main():
         pygame.display.update()
 
         if sun_health <= 0:
-            print("Game Over! Player has been defeated.")
-            run = False
-        elif white_tiger_health <= 0:
-            print("Congratulations! You have completed the first level.")  
             run = True
+        elif white_tiger_health <= 0:
+            run = True
+            Maps.maps_main()
 
         clock.tick(60) 
 
-    pygame.quit()
-
-main()
+if __name__ == "__main__":
+    bosslevel_2_main()
