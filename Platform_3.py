@@ -38,6 +38,7 @@ shark_sprites = [pygame.transform.scale(img, (200, 100)) for img in shark_sprite
 # Load collect sound
 collect_sound = pygame.mixer.Sound('collect_sound.wav')
 
+# Initialize player variables
 player_x = SCREEN_WIDTH // 2
 player_y = SCREEN_HEIGHT - 150
 player_speed = 5
@@ -78,6 +79,24 @@ stone_collected = 0
 lives = 3
 game_over = False
 win_game = False
+
+def reset_game():
+    global player_x, player_y, player_jump, jump_velocity, double_jump, stone_collected, stones, lives, game_over, win_game, sharks
+    player_x = SCREEN_WIDTH // 2
+    player_y = SCREEN_HEIGHT - 150
+    player_jump = False
+    jump_velocity = 0
+    double_jump = False
+    stone_collected = 0
+    stones = [generate_stone() for _ in range(5)]  # Reset stones
+    lives = 3
+    game_over = False
+    win_game = False
+    sharks = [
+        {'rect': pygame.Rect(random.randint(0, SCREEN_WIDTH), random.randint(50, SCREEN_HEIGHT - 200), 200, 80),
+         'frame': 0, 'frame_count': 0}
+        for _ in range(shark_count)
+    ]
 
 # Main game loop
 running = True
@@ -207,13 +226,13 @@ while running:
 
     # Check and display game over screen
     if game_over:
-        font = pygame.font.Font(None, 72)
-        game_over_text = font.render('Game Over', True, RED)
-        screen.blit(game_over_text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2 - 50))
-        pygame.display.flip()
-        pygame.time.wait(2000)
-        pygame.quit()
-        sys.exit()
+        game_over_font = pygame.font.SysFont(None, 70)
+        game_over_text = game_over_font.render("Game Over! Press R to Restart", True, RED)
+        screen.blit(game_over_text, (SCREEN_WIDTH // 2 - 300, SCREEN_HEIGHT // 2 + 20))
+        
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_r]:  # Check for restart key
+            reset_game()  # Call the reset function
 
     # Check and display win screen
     if win_game:
@@ -229,4 +248,4 @@ while running:
     clock.tick(60)
 
 if __name__ == "__main__":
-    platform_3_main()    
+    platform_3_main()
