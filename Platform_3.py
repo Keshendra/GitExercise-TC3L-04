@@ -41,7 +41,7 @@ collect_sound = pygame.mixer.Sound('collect_sound.wav')
 # Initialize player variables
 player_x = SCREEN_WIDTH // 2
 player_y = SCREEN_HEIGHT - 150
-player_speed = 5
+player_speed = 4
 player_jump = False
 jump_height = 25
 double_jump_height = 30 

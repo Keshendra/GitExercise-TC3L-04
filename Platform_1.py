@@ -34,7 +34,7 @@ background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREE
 
 initial_player_x = SCREEN_WIDTH // 2
 initial_player_y = SCREEN_HEIGHT - 150  
-player_speed = 4
+player_speed = 5
 jump_height = 20
 gravity = 1
 fall_speed = 15  
