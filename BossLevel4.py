@@ -33,17 +33,14 @@ red_bird_img = pygame.transform.scale(red_bird, (PLAYER_WIDTH, PLAYER_HEIGHT))
 fire_spell_sound = pygame.mixer.Sound("firesound.mp3")
 fire_explosion_sound = pygame.mixer.Sound("explosionsound.mp3")
 
-# Loading spell animation frames
 blackmyth_spell_frames = [pygame.image.load(f"blackmyth_spell_frame_{i}.png").convert_alpha() for i in range(1, 10)]
 current_blackmyth_frame = 0
-frame_delay = 2  # Delay between frames to slow down animation
+frame_delay = 2
 frame_count = 0
 
-# Fire spell frames
 fire_spell_frames = [pygame.image.load(f"fire_spell_frame_{i}.png").convert_alpha() for i in range(1, 9)]
 current_fire_frame = 0
 
-# Explosion frames for both spells
 fire_explosive_frames = [pygame.image.load(f"fire_explosive_frame_{i}.png").convert_alpha() for i in range(1, 11)]
 blackmyth_explosive_frames = [pygame.image.load(f"blackmyth_explosive_frame_{i}.png").convert_alpha() for i in range(1, 9)]
 
@@ -59,11 +56,9 @@ def draw_IMG():
 def draw(sun, red_bird, sun_health_rect, red_bird_health_rect, spells):
     global current_blackmyth_frame, current_fire_frame, frame_count, explosive_active, explosive_frame, explosion_type
 
-    # Draw players
     WINDOW.blit(sun_img, (sun.x, sun.y))
     WINDOW.blit(red_bird_img, (red_bird.x, red_bird.y))
 
-    # Draw spells
     for spell in spells:
         if spell["type"] == "blackmyth_spell":
             frame_count += 1
@@ -94,7 +89,6 @@ def draw(sun, red_bird, sun_health_rect, red_bird_health_rect, spells):
             explosive_active = False
             explosive_frame = 0
 
-    # Draw health bars
     pygame.draw.rect(WINDOW, "green", sun_health_rect)
     pygame.draw.rect(WINDOW, "red", red_bird_health_rect)
 
@@ -128,14 +122,11 @@ def bosslevel_4_main():
         if keys[pygame.K_RIGHT] and sun.x + PLAYER_VEL + sun.width <= WIDTH:
             sun.x += PLAYER_VEL
 
-        # Blackmyth spell (sun's spell)
         if keys[pygame.K_SPACE] and current_time - last_blackmyth_spell_time > 500:
-            # Adjusted y-position of the blackmyth spell to be centered more appropriately
             blackmyth_spell_rect = pygame.Rect(sun.x + sun.width, sun.y + sun.height // 2 - 150, 100, 100)
             spells.append({"type": "blackmyth_spell", "rect": blackmyth_spell_rect})
             last_blackmyth_spell_time = current_time
 
-        # Fire spell (red bird's spell)
         if current_time - last_fire_spell_time >= 1000:
             fire_spell_rect = pygame.Rect(red_bird.x, red_bird.y + red_bird.height // 2 - 150, 200, 200)
             spells.append({"type": "fire", "rect": fire_spell_rect})
