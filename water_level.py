@@ -1,89 +1,55 @@
 import pygame
 import sys
 import random
-<<<<<<< HEAD
-import BossLevel3
-
-def platform_3_main():
-    
-    pygame.init()
-    pygame.mixer.init()
-
-SCREEN_WIDTH = 1200
-SCREEN_HEIGHT = 600
-=======
 
 pygame.init()
 
-# Initialize the mixer for sound
-pygame.mixer.init()
-
 SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 750
->>>>>>> Hashabranch
 
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("MYSTIC QUEST")
+pygame.display.set_caption("Shark Attack: Collect Oxygen stones")
 
 clock = pygame.time.Clock()
 
 # Load images
-background_image = pygame.image.load('water_bg.png')
-<<<<<<< HEAD
-stone_image = pygame.image.load('water_stone.png')
-=======
+player_image = pygame.image.load('sun_moving_1.png')
 stone_image = pygame.image.load('water_stone.png')  # Oxygen stone image
->>>>>>> Hashabranch
+background_image = pygame.image.load('water_bg.png')
 heart_image = pygame.image.load('heart.png')
-background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
-stone_image = pygame.transform.scale(stone_image, (60, 60))
-heart_image = pygame.transform.scale(heart_image, (40, 40))
 
-# Load hero sprite sheet
-hero_sprites = [pygame.image.load(f'sun_moving_{i}.png').convert_alpha() for i in range(1, 6)]
-hero_sprites = [pygame.transform.scale(img, (100, 150)) for img in hero_sprites]
+player_width, player_height = 100, 150
+player_image = pygame.transform.scale(player_image, (player_width, player_height))
+stone_image = pygame.transform.scale(stone_image, (60, 60))
+background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+heart_image = pygame.transform.scale(heart_image, (40, 40))
 
 # Load shark sprite sheet
 shark_sprites = [pygame.image.load(f'shark_right_000{i}.png').convert_alpha() for i in range(1, 6)]
 shark_sprites = [pygame.transform.scale(img, (200, 100)) for img in shark_sprites]
 
-# Load collect sound
-collect_sound = pygame.mixer.Sound('collect_sound.wav')
 
-<<<<<<< HEAD
-# Initialize player variables
-=======
->>>>>>> Hashabranch
 player_x = SCREEN_WIDTH // 2
 player_y = SCREEN_HEIGHT - 150
 player_speed = 5
 player_jump = False
 jump_height = 25
-<<<<<<< HEAD
-double_jump_height = 30 
-=======
 double_jump_height = 30  # Higher jump for double jump
->>>>>>> Hashabranch
 gravity = 1
 jump_velocity = 0
 fall_speed = 15
-ground_level = SCREEN_HEIGHT - 150
+ground_level = SCREEN_HEIGHT - player_height
 double_jump = False
-
-# Animation variables
-hero_frame = 0
-hero_frame_count = 0
-hero_facing_right = True  # To determine the direction of movement for flipping sprites
 
 # Shark settings
 shark_speed = 3  # Slowed down shark speed
 shark_count = 4  # Maximum sharks on screen
 sharks = [
     {'rect': pygame.Rect(random.randint(0, SCREEN_WIDTH), random.randint(50, SCREEN_HEIGHT - 200), 200, 80),
-     'frame': 0, 'frame_count': 0}   #shark random aa varum 
+     'frame': 0, 'frame_count': 0}
     for _ in range(shark_count)
 ]
 
@@ -100,29 +66,7 @@ stone_collected = 0
 
 lives = 3
 game_over = False
-<<<<<<< HEAD
-win_game = False
-
-def reset_game():
-    global player_x, player_y, player_jump, jump_velocity, double_jump, stone_collected, stones, lives, game_over, win_game, sharks
-    player_x = SCREEN_WIDTH // 2
-    player_y = SCREEN_HEIGHT - 150
-    player_jump = False
-    jump_velocity = 0
-    double_jump = False
-    stone_collected = 0
-    stones = [generate_stone() for _ in range(5)]  # Reset stones
-    lives = 3
-    game_over = False
-    win_game = False
-    sharks = [
-        {'rect': pygame.Rect(random.randint(0, SCREEN_WIDTH), random.randint(50, SCREEN_HEIGHT - 200), 200, 80),
-         'frame': 0, 'frame_count': 0}
-        for _ in range(shark_count)
-    ]
-=======
 win_game = False  # New variable to check win condition
->>>>>>> Hashabranch
 
 # Main game loop
 running = True
@@ -133,21 +77,12 @@ while running:
             sys.exit()
 
     if not game_over and not win_game:  # Check for game state
-<<<<<<< HEAD
-=======
         # Key presses
->>>>>>> Hashabranch
         keys = pygame.key.get_pressed()
-        moving = False  # Flag to check if player is moving
-
         if keys[pygame.K_LEFT]:
             player_x -= player_speed
-            hero_facing_right = False
-            moving = True
         if keys[pygame.K_RIGHT]:
             player_x += player_speed
-            hero_facing_right = True
-            moving = True
 
         # Handle jumping
         if keys[pygame.K_UP]:
@@ -177,7 +112,7 @@ while running:
                 double_jump = False  # Reset double jump
 
         # Boundary checks
-        player_x = max(0, min(player_x, SCREEN_WIDTH - 100))
+        player_x = max(0, min(player_x, SCREEN_WIDTH - player_width))
 
         # Move sharks and animate
         for shark in sharks:
@@ -193,34 +128,18 @@ while running:
                 shark['frame'] = (shark['frame'] + 1) % len(shark_sprites)
                 shark['frame_count'] = 0
 
-        # Animate hero if moving
-        if moving:
-            hero_frame_count += 1
-            if hero_frame_count >= 8:  # Change frame every 8 ticks
-                hero_frame = (hero_frame + 1) % len(hero_sprites)
-                hero_frame_count = 0
-        else:
-            hero_frame = 0  # Reset to first frame when idle
-
         # Check if player collects stones
-        player_rect = pygame.Rect(player_x, player_y, 100, 150)
+        player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
         for stone in stones[:]:
             if player_rect.colliderect(stone):
                 stones.remove(stone)
                 stone_collected += 1
-                # Play collect sound
-                collect_sound.play()
                 # Spawn a new stone
                 stones.append(generate_stone())
 
         # Check for win condition
         if stone_collected >= total_stones:
-<<<<<<< HEAD
-            win_game = True
-            BossLevel3.bosslevel_3_main()
-=======
             win_game = True  # Set win condition
->>>>>>> Hashabranch
 
         # Shark collision and game over check
         for shark in sharks:
@@ -243,11 +162,8 @@ while running:
     for stone in stones:
         screen.blit(stone_image, (stone.x, stone.y))
 
-    # Draw hero (flip if moving left)
-    hero_image = hero_sprites[hero_frame]
-    if not hero_facing_right:
-        hero_image = pygame.transform.flip(hero_image, True, False)
-    screen.blit(hero_image, (player_x, player_y))
+    # Draw player
+    screen.blit(player_image, (player_x, player_y))
 
     # Draw lives
     for i in range(lives):
@@ -260,15 +176,6 @@ while running:
 
     # Check and display game over screen
     if game_over:
-<<<<<<< HEAD
-        game_over_font = pygame.font.SysFont(None, 70)
-        game_over_text = game_over_font.render("Game Over! Press R to Restart", True, RED)
-        screen.blit(game_over_text, (SCREEN_WIDTH // 2 - 300, SCREEN_HEIGHT // 2 + 20))
-        
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_r]:  # Check for restart key
-            reset_game()  # Call the reset function
-=======
         font = pygame.font.Font(None, 72)
         game_over_text = font.render('Game Over', True, RED)
         screen.blit(game_over_text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2 - 50))
@@ -276,7 +183,6 @@ while running:
         pygame.time.wait(2000)
         pygame.quit()
         sys.exit()
->>>>>>> Hashabranch
 
     # Check and display win screen
     if win_game:
@@ -290,9 +196,3 @@ while running:
 
     pygame.display.flip()
     clock.tick(60)
-<<<<<<< HEAD
-
-if __name__ == "__main__":
-    platform_3_main()
-=======
->>>>>>> Hashabranch
