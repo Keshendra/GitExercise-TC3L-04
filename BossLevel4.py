@@ -36,7 +36,7 @@ fire_explosion_sound = pygame.mixer.Sound("explosionsound.mp3")
 # Loading spell animation frames
 blackmyth_spell_frames = [pygame.image.load(f"blackmyth_spell_frame_{i}.png").convert_alpha() for i in range(1, 10)]
 current_blackmyth_frame = 0
-frame_delay = 2  # Delay between frames to slow down animation
+frame_delay = 2 
 frame_count = 0
 
 # Fire spell frames
