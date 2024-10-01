@@ -54,9 +54,13 @@ shark_sprites = [pygame.transform.scale(img, (200, 100)) for img in shark_sprite
 collect_sound = pygame.mixer.Sound('collect_sound.wav')
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Initialize player variables
 =======
 >>>>>>> Hashabranch
+=======
+# Initialize player variables
+>>>>>>> d24b1c9 ( This is the 3rd level which is water level . right now i have added a key R for the player to restart the platform game if he lose it, if he managed to win the game and it will redirect him to the bosslevel .)
 player_x = SCREEN_WIDTH // 2
 player_y = SCREEN_HEIGHT - 150
 player_speed = 5
@@ -120,9 +124,12 @@ def reset_game():
          'frame': 0, 'frame_count': 0}
         for _ in range(shark_count)
     ]
+<<<<<<< HEAD
 =======
 win_game = False  # New variable to check win condition
 >>>>>>> Hashabranch
+=======
+>>>>>>> d24b1c9 ( This is the 3rd level which is water level . right now i have added a key R for the player to restart the platform game if he lose it, if he managed to win the game and it will redirect him to the bosslevel .)
 
 # Main game loop
 running = True
@@ -261,6 +268,9 @@ while running:
     # Check and display game over screen
     if game_over:
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d24b1c9 ( This is the 3rd level which is water level . right now i have added a key R for the player to restart the platform game if he lose it, if he managed to win the game and it will redirect him to the bosslevel .)
         game_over_font = pygame.font.SysFont(None, 70)
         game_over_text = game_over_font.render("Game Over! Press R to Restart", True, RED)
         screen.blit(game_over_text, (SCREEN_WIDTH // 2 - 300, SCREEN_HEIGHT // 2 + 20))
@@ -268,6 +278,7 @@ while running:
         keys = pygame.key.get_pressed()
         if keys[pygame.K_r]:  # Check for restart key
             reset_game()  # Call the reset function
+<<<<<<< HEAD
 =======
         font = pygame.font.Font(None, 72)
         game_over_text = font.render('Game Over', True, RED)
@@ -277,6 +288,8 @@ while running:
         pygame.quit()
         sys.exit()
 >>>>>>> Hashabranch
+=======
+>>>>>>> d24b1c9 ( This is the 3rd level which is water level . right now i have added a key R for the player to restart the platform game if he lose it, if he managed to win the game and it will redirect him to the bosslevel .)
 
     # Check and display win screen
     if win_game:
@@ -294,5 +307,8 @@ while running:
 
 if __name__ == "__main__":
     platform_3_main()
+<<<<<<< HEAD
 =======
 >>>>>>> Hashabranch
+=======
+>>>>>>> d24b1c9 ( This is the 3rd level which is water level . right now i have added a key R for the player to restart the platform game if he lose it, if he managed to win the game and it will redirect him to the bosslevel .)
